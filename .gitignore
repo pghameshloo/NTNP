@@ -1,0 +1,22 @@
+## .NET
+bin/
+obj/
+*.user
+.vs/
+*.suo
+
+## Test results
+TestResults/
+*.trx
+
+## Rider/VS Code
+.idea/
+.vscode/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Local secrets
+appsettings.Development.local.json
+*.pfx

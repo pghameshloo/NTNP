@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>NTNP.Pricing.Domain</RootNamespace>
+    <!-- Domain is deliberately dependency-free: pure entities, value objects and the
+         calculation engine. No EF Core, no ASP.NET, no external package may be added here. -->
+    <WarningsAsErrors>CS8600;CS8602;CS8603;CS8618;CS8625</WarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

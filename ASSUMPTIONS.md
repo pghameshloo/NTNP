@@ -1,0 +1,122 @@
+# ASSUMPTIONS
+
+This document records every professional/scalable default assumed during implementation of the
+NTNP Pricing Engine, per the instruction in the master prompt to record ambiguous-detail decisions
+here rather than stopping implementation.
+
+## 0. Source Excel workbooks
+
+**No `Pricing-table.xlsx` or any other Excel workbook was actually present in this session's
+uploads.** Only `NTNP_Claude_Code_Master_Prompt.md` was attached (verified by listing the upload
+directory and searching the whole container filesystem for `*.xlsx`). The master prompt itself is,
+however, extremely detailed and specifies the legacy Excel process narratively and formulaically
+(sheet names, field lists, and exact formulas in sections 2, 9, 10, 11, 17–20, including a fully
+worked mandatory numeric example in section 20).
+
+Given the explicit instruction *"When a minor detail is ambiguous, use a professional and scalable
+default, record the assumption ... and continue"* and *"Do not stop after returning a plan"*, the
+implementation proceeds using the master prompt's own textual/formulaic description as the
+authoritative "Excel reference" in place of inspecting actual workbook cells/formulas.
+`docs/excel-mapping.md` is therefore written as a mapping from the **described** legacy process
+(`SOURCE PRICE DEVICES` → panel-type sheets → `BODY+ES` → `TOTAL`) to the new schema/modules,
+rather than from literal cell/formula citations of a workbook that does not exist in this
+environment.
+
+**If the real `Pricing-table.xlsx` (and other workbooks) are supplied later**, re-run the Equipment
+Database Excel import (Section 9) against them and reconcile `docs/excel-mapping.md` against the
+actual column layout — the import mapping screen is column-driven precisely so this reconciliation
+does not require code changes.
+
+## 1. Technology versions
+
+- "Latest stable LTS version of .NET" = **.NET 10** (LTS, released Nov 2025; current date in this
+  session is 2026-09-01, so .NET 10 is the current LTS). All projects target `net10.0` /
+  `net10.0-windows` as applicable.
+- SQL Server provider: `Microsoft.EntityFrameworkCore.SqlServer` against SQL Server 2019+.
+- PDF library: **QuestPDF is avoided** for the default distribution path because its Community
+  license is revenue-gated; **PdfSharp + MigraDoc (MIT)** is used instead so the whole stack is
+  royalty-free for an enterprise the size of NTNP. Excel import/export: **ClosedXML (MIT)**.
+  Documented in `docs/package-licenses.md`.
+- Font: **Vazirmatn** (SIL Open Font License 1.1, redistributable) bundled for Persian; **Segoe UI /
+  Inter** fallback stack for Latin/numeric content.
+
+## 2. Build/test environment
+
+This session's sandboxed network only allow-lists a small set of hosts. `dot.net` /
+`builds.dotnet.microsoft.com` (the official install-script host) is **not** reachable, but the
+`.NET 10 SDK` and `dotnet` tooling were obtainable via the environment's local `apt` mirror
+(`dotnet-sdk-10.0`), and `api.nuget.org` **is** reachable, so all NuGet package restore, build and
+test execution in this session use the real toolchain — this is not a "written but never
+compiled" delivery. Results of `dotnet build`/`dotnet test` runs are reported in the final summary.
+The WiX v4 MSI packaging step needs the Windows toolchain (`wix.exe`/heat/light are Windows-only
+even though the CLI is cross-platform-buildable); the WiX **project sources** are complete and
+buildable on a Windows machine or CI runner with the `wix` .NET tool installed — see
+`docs/deployment.md`.
+
+## 3. Panel Types / Product Families
+
+Panel types (`INCOMING`, `OUTGOING`, `BUS COUPLER`, `BUS RISER`, `METERING`, `AUXILIARY`, `CUSTOM`)
+are seeded as **data rows** in a `PanelType` lookup table (admin-editable), not as an enum, so the
+system is not hardcoded to these values, per Section 3. Product families (`UniSafe`,
+`UniGear ZS3.2`, `SIVACON 8PT`) are likewise a data-driven `ProductFamily` table.
+
+## 4. "Other Direct Cost Per Panel"
+
+Section 14 lists "Other Direct Cost Per Panel" as a project-line field beside Equipment Cost and
+BODY+ES Cost, but no module is specified to produce it. It is implemented as a manually-entered,
+audited, optional override field on the project line (default `0`), because Sections 15/17 make
+clear that Equipment Cost and BODY+ES Cost are the two BOM-driven cost components; "other direct
+cost" is treated as a commercial adjustment line (e.g. freight, site works) entered by Commercial
+users with the same override audit trail as other authorized overrides (Section 14).
+
+## 5. Rounding policy
+
+"IRR Rounding Policy" / "Foreign-Currency Rounding Policy" on the Pricing Profile are implemented as
+a `RoundingMode` (`None`, `NearestInteger`, `NearestThousand`, `NearestHundred`) + `DecimalPlaces`
+pair, applied **only at output/report stages** (Section 4), never inside stored calculation values.
+Stored `ProjectLine`/`ProjectRevisionTotal` numeric columns always carry unrounded `decimal` values;
+rounding is applied by the Reporting layer and by explicit "rounded" read-model properties.
+
+## 6. Reconciliation tolerance
+
+Default reconciliation tolerance = **1 IRR** (i.e. exact to the rial) when a Pricing Profile does
+not specify an override, since the worked example in Section 20 reconciles to 0 exactly under
+decimal arithmetic.
+
+## 7. Authentication
+
+JWT access tokens (15 minute lifetime) + rotating refresh tokens (7 day lifetime, stored hashed,
+one-time-use, revoked on rotation) issued by ASP.NET Core Identity. Active Directory / Windows
+Integrated Auth is **not** wired up for v1 (explicitly deferred by Section 6), but
+`IUserPrincipalProvider`/`IAuthenticationScheme` are abstracted so an AD/Negotiate scheme can be
+added later without touching Application/Domain code.
+
+## 8. File storage
+
+"Server file storage" (Section 32) is implemented as a configurable directory on the application
+server's local/attached disk (`FileStorage:RootPath`), addressed by a `IFileStorageService`
+abstraction so it can later be swapped for a UNC share or blob store without changing callers. SHA-256
+file hash is stored with every `StoredFile` row.
+
+## 9. Multi-tenancy / branding
+
+Company branding (logo, colors, footer legal text, signature blocks, default commercial terms) is a
+single-row `CompanySettings` table (Section 26 requires these be configurable without code changes);
+multi-company/tenant support is out of scope for v1 as the prompt describes a single company (NTNP).
+
+## 10. Placeholder brand assets
+
+No official NTNP logo file was supplied. `src/NTNP.Pricing.Desktop/Resources/logo.png` and
+`src/NTNP.Pricing.Desktop/Assets/ntnp.ico` are a placeholder geometric mark (three bars on a navy
+rounded square, using the exact corporate palette from Section 23) generated for this build so the
+app shell, reports and installer are not literally blank. `CompanySettings.LogoPath` (Section 26) is
+fully configurable from the admin Settings screen without a rebuild — replace the placeholder there
+once NTNP supplies the real vector logo. The Vazirmatn font files bundled under
+`src/NTNP.Pricing.Desktop/Assets/Fonts/` are the genuine upstream OFL-1.1-licensed font (installed
+from the `fonts-vazirmatn` package, license text copied to `docs/licenses/OFL-1.1-Vazirmatn.txt`),
+not a placeholder.
+
+## 11. Non-critical limitations
+
+See the "Known non-critical limitations" section of the final delivery summary message for the full,
+up-to-date list (kept there rather than duplicated here so it always reflects the as-built state).
