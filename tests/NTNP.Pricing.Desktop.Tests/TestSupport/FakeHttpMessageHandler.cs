@@ -36,7 +36,12 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
         // route like "api/project-revisions/{id}" registered before "api/project-revisions/{id}/mto"
         // would swallow every request to the more specific sub-route too (both share that prefix),
         // silently serving the wrong canned response instead of a 404 or the intended match.
-        var candidates = _routes.Where(r =>
+        //
+        // Among equally-specific matches (e.g. a test re-registering the exact same route mid-test to
+        // simulate a state change, such as an approval-history GET returning a new entry after an
+        // approve action), the MOST RECENTLY registered one wins — that is the natural "override"
+        // semantics a test author expects from calling WhenJson a second time for the same route.
+        var candidates = _routes.Select((r, i) => (r.Key, r.Respond, Index: i)).Where(r =>
         {
             var parts = r.Key.Split(' ', 2);
             if (!string.Equals(parts[0], request.Method.Method, StringComparison.OrdinalIgnoreCase)) return false;
@@ -44,7 +49,7 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
             return path.Equals(prefix, StringComparison.Ordinal) ||
                    (path.StartsWith(prefix, StringComparison.Ordinal) && path.Length > prefix.Length && path[prefix.Length] == '/');
         });
-        var match = candidates.OrderByDescending(r => r.Key.Length).FirstOrDefault();
+        var match = candidates.OrderByDescending(r => r.Key.Length).ThenByDescending(r => r.Index).FirstOrDefault();
 
         if (match.Respond is null)
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent($"No fake route registered for {request.Method} {path}") });
