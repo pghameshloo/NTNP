@@ -35,6 +35,15 @@ jobs:
       - name: Restore & build solution (Release)
         run: dotnet build NTNP.Pricing.sln -c Release --nologo
 
+      - name: Install Playwright Chromium (needed by Reporting.Tests' real headless-Chromium PDF rendering)
+        shell: pwsh
+        run: |
+          $script = Get-ChildItem -Path . -Recurse -Filter "playwright.ps1" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $script) { throw "playwright.ps1 not found after build — Microsoft.Playwright package did not generate its install script." }
+          Write-Host "Using $($script.FullName)"
+          & $script.FullName install chromium
+          if ($LASTEXITCODE -ne 0) { throw "playwright.ps1 install chromium failed with exit code $LASTEXITCODE." }
+
       - name: Run Domain.Tests
         run: dotnet test tests/NTNP.Pricing.Domain.Tests -c Release --no-build --nologo
 
