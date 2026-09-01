@@ -19,7 +19,7 @@
     <UI>
       <Dialog Id="ServerAddressDlg" Width="370" Height="270" Title="NTNP Pricing Engine Setup">
         <Control Id="Title" Type="Text" X="15" Y="6" Width="240" Height="15" Transparent="yes" NoPrefix="yes">
-          <Text>{\WixUI_Font_Title}Server Connection</Text>
+          <Text Value="{\WixUI_Font_Title}Server Connection" />
         </Control>
         <Control Id="Description" Type="Text" X="25" Y="23" Width="320" Height="30" Transparent="yes" NoPrefix="yes"
                  Text="Enter the address of the NTNP Pricing Engine server used by everyone on this computer. You (or any user) can change it later from the application's own Server Connection Settings screen — this is only the initial default." />
@@ -35,13 +35,13 @@
 
         <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
         <Control Id="BackButton" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="&amp;Back">
-          <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
+          <Publish Event="NewDialog" Value="InstallDirDlg" Condition="1" />
         </Control>
         <Control Id="NextButton" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="&amp;Next">
-          <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" Condition="1" />
         </Control>
         <Control Id="CancelButton" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
-          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+          <Publish Event="SpawnDialog" Value="CancelDlg" Condition="1" />
         </Control>
       </Dialog>
 
@@ -55,8 +55,8 @@
         exact value. Verify this wizard's Back/Next flow visually on the first real Windows build —
         see docs/deployment.md's installer build/QA checklist.
       -->
-      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="ServerAddressDlg" Order="10">1</Publish>
-      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="ServerAddressDlg" Order="10">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="ServerAddressDlg" Order="10" Condition="1" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="ServerAddressDlg" Order="10" Condition="1" />
     </UI>
 
   </Fragment>

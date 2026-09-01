@@ -67,6 +67,14 @@ $wxsContent = [System.IO.File]::ReadAllText($wxsPath, [System.Text.Encoding]::UT
 $wxsContent = $wxsContent -replace '\bVersion="[\d.]+"', "Version=`"$Version`""
 [System.IO.File]::WriteAllText($wxsPath, $wxsContent, [System.Text.UTF8Encoding]::new($false))
 
+# Diagnostic: a WIX0104 "invalid XML declaration" on this file's line 1 has survived one prior fix
+# attempt (switching Get-Content/Set-Content to File.ReadAllText/WriteAllText) for reasons not yet
+# confirmed. Dump the exact bytes actually on disk right before WiX reads them so the next failure
+# (if any) carries direct evidence instead of another guess. Safe to remove once this is resolved.
+$firstBytes = [System.IO.File]::ReadAllBytes($wxsPath) | Select-Object -First 64
+Write-Host "Package.wxs first 64 bytes (hex): $(($firstBytes | ForEach-Object { $_.ToString('X2') }) -join ' ')"
+Write-Host "Package.wxs first line (raw): $((Get-Content $wxsPath -TotalCount 1))"
+
 dotnet build $installerProject -c Release
 if ($LASTEXITCODE -ne 0) { throw "dotnet build (WiX) failed with exit code $LASTEXITCODE." }
 
