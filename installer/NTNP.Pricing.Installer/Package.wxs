@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <!--
+    Section 34 — NTNP Pricing Engine desktop client installer.
+
+    UpgradeCode below is fixed for the life of this product — it must NEVER change between
+    releases (that is what lets <MajorUpgrade> recognize "this is an upgrade of the same product").
+    Package/@Version is bumped on every release; Package/@Id is left auto-generated ("*") so every
+    build gets a fresh ProductCode, which is the standard, recommended pattern for a MajorUpgrade-
+    based installer (only the UpgradeCode needs to stay stable).
+  -->
+  <Package Name="NTNP Pricing Engine"
+            Manufacturer="Novin Tarh Niro Pars"
+            Version="1.0.0"
+            UpgradeCode="17e71e74-e21f-4ecd-b6e5-2966f458711b"
+            Language="1033"
+            Codepage="1252"
+            InstallerVersion="500"
+            Scope="perMachine">
+
+    <SummaryInformation Description="NTNP Pricing Engine — MV/LV Switchgear Pricing Client" Manufacturer="Novin Tarh Niro Pars" />
+
+    <!--
+      Section 34 "Upgrade support" / "Preserve endpoint configuration during upgrade": an upgrade
+      only replaces the files this MSI installed under INSTALLFOLDER (Program Files) — it never
+      touches the per-user %LOCALAPPDATA%\NTNP\Pricing\client-settings.json the app itself writes at
+      runtime (see ServerConnectionSettingsService), so a user's chosen server address survives an
+      upgrade with no special handling needed here.
+    -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of NTNP Pricing Engine is already installed. Uninstall it first if you need to downgrade." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Section 34 "Clean uninstall" / "Uninstall must never delete server data": this installer
+         only ever touches the client machine's Program Files/shortcuts/registry — no server or
+         database component is ever part of this package, so there is nothing server-side an
+         uninstall could delete even accidentally. -->
+
+    <Icon Id="AppIcon.exe" SourceFile="..\..\src\NTNP.Pricing.Desktop\Assets\ntnp.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.exe" />
+    <Property Id="ARPHELPLINK" Value="https://www.ntnp.example/support" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="NTNP Pricing Engine" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="NTNP Pricing Engine" />
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder" />
+
+    <!-- Start Menu shortcut (Section 34 — always installed). -->
+    <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder" Guid="*">
+      <Shortcut Id="StartMenuShortcutFile"
+                Name="NTNP Pricing Engine"
+                Description="NTNP Pricing Engine — MV/LV Switchgear Pricing Client"
+                Target="[INSTALLFOLDER]NTNP.Pricing.Desktop.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon.exe" />
+      <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+      <RegistryValue Root="HKLM" Key="Software\NTNP\Pricing" Name="StartMenuShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Desktop shortcut (Section 34 — optional, toggled on the Server Address setup page). -->
+    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="*" Condition="INSTALLDESKTOPSHORTCUT = &quot;1&quot;">
+      <Shortcut Id="DesktopShortcutFile"
+                Name="NTNP Pricing Engine"
+                Description="NTNP Pricing Engine — MV/LV Switchgear Pricing Client"
+                Target="[INSTALLFOLDER]NTNP.Pricing.Desktop.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon.exe" />
+      <RegistryValue Root="HKLM" Key="Software\NTNP\Pricing" Name="DesktopShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Section 34 "Configurable internal server address": written by ServerAddressDlg (see
+         ServerAddressDialog.wxs) into HKLM so it becomes every user's default on this machine;
+         ServerConnectionSettingsService reads it as a fallback under the per-user settings file. -->
+    <Component Id="ServerUrlRegistry" Directory="INSTALLFOLDER" Guid="*">
+      <RegistryValue Root="HKLM" Key="Software\NTNP\Pricing" Name="ServerUrl" Type="string" Value="[SERVERURL]" KeyPath="yes" />
+    </Component>
+
+    <Feature Id="MainFeature" Title="NTNP Pricing Engine" Level="1" AllowAdvertise="no">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+      <ComponentRef Id="ServerUrlRegistry" />
+    </Feature>
+
+    <!-- Section 34 "Ready for digital signing": no additional authoring is needed here — the
+         built .msi (and, for a smoother SmartScreen experience, the self-contained .exe under
+         PublishDir) are signed post-build with signtool.exe; see docs/deployment.md. -->
+
+    <!--
+      Uses WiX's stock banner/dialog graphics (no NTNP-branded WixUIBannerBmp/WixUIDialogBmp
+      overrides are supplied — no source BMP assets exist in this repository; see ASSUMPTIONS.md §10
+      on the placeholder-logo situation). Point WixUIBannerBmp/WixUIDialogBmp at real 493x58 /
+      493x312 BMP artwork here once NTNP supplies branded installer graphics.
+    -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+  </Package>
+
+  <!--
+    Section 34 "Self-contained Windows x64 deployment": the harvested tree below is the output of
+    a self-contained `dotnet publish -r win-x64` (see build-installer.ps1) — the full .NET runtime,
+    all managed DLLs, the WPF native dependencies, and the app itself, so the target machine needs
+    nothing pre-installed. A Fragment is a top-level sibling of Package (not nested inside it); the
+    Feature above pulls it in via ComponentGroupRef.
+  -->
+  <Fragment>
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PublishDir)**" />
+    </ComponentGroup>
+  </Fragment>
+</Wix>

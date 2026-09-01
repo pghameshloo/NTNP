@@ -54,10 +54,21 @@ This session's sandboxed network only allow-lists a small set of hosts. `dot.net
 (`dotnet-sdk-10.0`), and `api.nuget.org` **is** reachable, so all NuGet package restore, build and
 test execution in this session use the real toolchain — this is not a "written but never
 compiled" delivery. Results of `dotnet build`/`dotnet test` runs are reported in the final summary.
-The WiX v4 MSI packaging step needs the Windows toolchain (`wix.exe`/heat/light are Windows-only
-even though the CLI is cross-platform-buildable); the WiX **project sources** are complete and
-buildable on a Windows machine or CI runner with the `wix` .NET tool installed — see
-`docs/deployment.md`.
+The WiX v5 MSI packaging step needs the Windows toolchain — this was verified empirically in this
+session, not just assumed: the `wix` .NET global tool does install and run on this Linux sandbox
+(`dotnet tool install --global wix`), and `dotnet publish -r win-x64 --self-contained true` on the
+Desktop project also succeeds here (producing a real 294-file, ~144 MB self-contained win-x64
+publish output — cross-compilation genuinely works). But every attempt to actually **build** the
+`.msi` (`wix build` / `dotnet build` on the `.wixproj`) printed WiX's own
+`WIX0000: The WiX Toolset only supports Windows ... All behavior after this point is undefined`
+warning and then failed with no further diagnostic text, non-deterministically — the exact same
+`wix format` invocation on the exact same unmodified file succeeded once and then failed on a
+following run. That is a genuine, unpredictable native-interop failure on this platform, not a
+fixable syntax issue in the `.wxs` sources; retrying, debugging, or waiting for a different sandbox
+would not help. The WiX **project sources** (`installer/NTNP.Pricing.Installer/`) are complete and
+were reviewed by hand rather than compiler-validated for this reason — build and QA them on a
+Windows machine or CI runner with the WiX v5 SDK (restored automatically via NuGet, no separate
+install needed) — see `docs/deployment.md`.
 
 ## 3. Panel Types / Product Families
 

@@ -14,7 +14,8 @@ public static class IdentitySeeder
     public const string DevAdminEmail = "admin@ntnp.local";
     public const string DevAdminPassword = "Ntnp!Admin123";
 
-    public static async Task SeedAsync(RoleManager<ApplicationRole> roleManager, UserManager<ApplicationUser> userManager)
+    /// <summary>Idempotently creates the five roles (Section 6) if they don't already exist. Shared by <see cref="SeedAsync"/> and the production admin-bootstrap utility (`dotnet run -- create-admin`, see docs/deployment.md).</summary>
+    public static async Task EnsureRolesAsync(RoleManager<ApplicationRole> roleManager)
     {
         foreach (var roleName in Roles.All)
         {
@@ -23,6 +24,11 @@ public static class IdentitySeeder
                 await roleManager.CreateAsync(new ApplicationRole(roleName) { Description = $"{roleName} role" });
             }
         }
+    }
+
+    public static async Task SeedAsync(RoleManager<ApplicationRole> roleManager, UserManager<ApplicationUser> userManager)
+    {
+        await EnsureRolesAsync(roleManager);
 
         var existingAdmin = await userManager.FindByEmailAsync(DevAdminEmail);
         if (existingAdmin is not null)

@@ -34,16 +34,43 @@ public sealed class ServerConnectionSettingsService : IServerConnectionSettingsS
     {
         try
         {
-            if (!File.Exists(SettingsPath)) return DefaultApiBaseUrl;
-            var json = File.ReadAllText(SettingsPath);
-            var loaded = JsonSerializer.Deserialize<PersistedSettings>(json);
-            return string.IsNullOrWhiteSpace(loaded?.ApiBaseUrl) ? DefaultApiBaseUrl : loaded.ApiBaseUrl;
+            if (File.Exists(SettingsPath))
+            {
+                var json = File.ReadAllText(SettingsPath);
+                var loaded = JsonSerializer.Deserialize<PersistedSettings>(json);
+                if (!string.IsNullOrWhiteSpace(loaded?.ApiBaseUrl))
+                    return loaded.ApiBaseUrl;
+            }
         }
         catch
         {
-            // A corrupt/unreadable settings file must never block the app from starting — fall back
-            // to the default and let the user re-enter the server address on the Login/Settings screen.
-            return DefaultApiBaseUrl;
+            // A corrupt/unreadable settings file must never block the app from starting — fall
+            // through to the machine-wide default (or the hardcoded one) instead.
+        }
+
+        return TryReadMachineDefault() ?? DefaultApiBaseUrl;
+    }
+
+    /// <summary>
+    /// Section 34 — the Windows installer's "Server Address" setup page writes the administrator's
+    /// chosen address to <c>HKLM\Software\NTNP\Pricing\ServerUrl</c> (see
+    /// installer/NTNP.Pricing.Installer) so every user on a shared workstation gets the right
+    /// default without having to know the address themselves; the per-user
+    /// <see cref="SettingsPath"/> file (checked first, above) still lets an individual user override
+    /// it — e.g. to point at a pilot/test server — without touching the machine-wide default.
+    /// </summary>
+    private static string? TryReadMachineDefault()
+    {
+        try
+        {
+            if (!OperatingSystem.IsWindows()) return null;
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"Software\NTNP\Pricing");
+            var value = key?.GetValue("ServerUrl") as string;
+            return string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+        catch
+        {
+            return null;
         }
     }
 

@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using NTNP.Pricing.Api.Authorization;
 using NTNP.Pricing.Api.Middleware;
 using NTNP.Pricing.Api.Services;
+using NTNP.Pricing.Api.Tools;
 using NTNP.Pricing.Application;
 using NTNP.Pricing.Application.Common;
 using NTNP.Pricing.Infrastructure;
@@ -78,11 +79,42 @@ try
     app.UseAuthorization();
     app.MapControllers();
 
+    // Section 35 "SQL Server migration utility": `NTNP.Pricing.Api.exe migrate` applies pending EF
+    // Core migrations and exits — a clean, auditable, non-interactive step an admin runs
+    // deliberately (see deployment/database/migrate.ps1), distinct from Database:AutoMigrate below
+    // (which migrates automatically on every service start — useful for dev, deliberately off by
+    // default in production so schema changes are a reviewed, explicit action).
+    if (args.Length > 0 && string.Equals(args[0], "migrate", StringComparison.OrdinalIgnoreCase))
+    {
+        using var migrateScope = app.Services.CreateScope();
+        var migrateDb = migrateScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var pending = (await migrateDb.Database.GetPendingMigrationsAsync()).ToList();
+        if (pending.Count == 0)
+        {
+            Console.WriteLine("Database is already up to date — no pending migrations.");
+            return 0;
+        }
+        Console.WriteLine($"Applying {pending.Count} pending migration(s): {string.Join(", ", pending)}");
+        await migrateDb.Database.MigrateAsync();
+        Console.WriteLine("Migration complete.");
+        return 0;
+    }
+
     if (builder.Configuration.GetValue<bool>("Database:AutoMigrate"))
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await db.Database.MigrateAsync();
+    }
+
+    // Section 35 "Initial Admin creation utility": `NTNP.Pricing.Api.exe create-admin [...]`
+    // creates the first production Admin account through the real Identity stack, then exits —
+    // it never starts Kestrel/the Windows Service. See deployment/database/create-admin.ps1 and
+    // docs/deployment.md. Checked after AutoMigrate above (so the Users table exists) but before
+    // the dev-only DbSeeder call below (which must never run against a production database).
+    if (args.Length > 0 && string.Equals(args[0], "create-admin", StringComparison.OrdinalIgnoreCase))
+    {
+        return await AdminBootstrap.RunAsync(app.Services, args);
     }
 
     if (builder.Configuration.GetValue<bool>("Database:Seed"))

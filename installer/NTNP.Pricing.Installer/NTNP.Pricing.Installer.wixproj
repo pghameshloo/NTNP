@@ -1,0 +1,46 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!--
+    Section 34 — Windows x64 installer for the desktop client. Built on WiX Toolset v5 (the last
+    fully open-source release line before the v6/v7 "Open Source Maintenance Fee" licensing change —
+    see docs/deployment.md's "Building the installer" section for that decision).
+
+    This project cannot be built or run in this repository's Linux development sandbox: WiX's own
+    CLI prints "The WiX Toolset only supports Windows ... All behavior after this point is
+    undefined" on non-Windows and MSI authoring fundamentally targets the Windows Installer service.
+    See ASSUMPTIONS.md §2. Build it on a Windows machine (or a Windows CI runner) via
+    deployment/client/build-installer.ps1, which runs the two steps below in order.
+  -->
+
+  <PropertyGroup>
+    <OutputName>NTNP-Pricing-Setup-x64</OutputName>
+    <OutputType>Package</OutputType>
+    <Platforms>x64</Platforms>
+    <!--
+      Step 1 (done by build-installer.ps1 before this project builds):
+        dotnet publish ..\..\src\NTNP.Pricing.Desktop\NTNP.Pricing.Desktop.csproj -c Release
+          -r win-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=false
+          -o ..\..\src\NTNP.Pricing.Desktop\bin\Release\net10.0-windows\win-x64\publish
+      That directory is what PublishDir points at and what <Files Include> below harvests — a
+      self-contained publish so end users never need to separately install the .NET runtime
+      (Section 34's "No separate .NET runtime installation required").
+    -->
+    <PublishDir Condition="'$(PublishDir)'==''">..\..\src\NTNP.Pricing.Desktop\bin\Release\net10.0-windows\win-x64\publish\</PublishDir>
+    <DefineConstants>PublishDir=$(PublishDir)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Package.wxs" />
+    <Compile Include="ServerAddressDialog.wxs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="License.rtf" />
+  </ItemGroup>
+
+</Project>
