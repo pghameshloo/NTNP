@@ -1,0 +1,68 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Section 23 — real Vazirmatn (SIL OFL-1.1, redistributable — see docs/package-licenses.md)
+        for Persian text; a professional Latin stack for English/numeric content. The pack URIs point
+        at the fonts embedded as WPF Resources (see the csproj) so no external font install is needed.
+
+        Vazirmatn ships each weight as its own static file with its own OpenType family name
+        (confirmed via fc-scan's family-format report): Regular and Bold share the family "Vazirmatn"
+        (a standard Regular/Bold GDI pairing), while Medium and SemiBold are each their own family
+        ("Vazirmatn Medium", "Vazirmatn SemiBold"). Referencing one shared family and relying on
+        FontWeight to pick Medium/SemiBold is not reliable across renderers, so each weight gets its
+        own explicit FontFamily resource instead of a single family + FontWeight synthesis.
+    -->
+    <FontFamily x:Key="PersianFontFamily">pack://application:,,,/Assets/Fonts/#Vazirmatn</FontFamily>
+    <FontFamily x:Key="PersianMediumFontFamily">pack://application:,,,/Assets/Fonts/#Vazirmatn Medium</FontFamily>
+    <FontFamily x:Key="PersianSemiBoldFontFamily">pack://application:,,,/Assets/Fonts/#Vazirmatn SemiBold</FontFamily>
+    <FontFamily x:Key="LatinFontFamily">Segoe UI, Tahoma, sans-serif</FontFamily>
+    <!-- Tabular (fixed-width) digits for financial figures — Section 23: "prefer tabular financial figures". -->
+    <FontFamily x:Key="TabularNumberFontFamily">Consolas, Segoe UI, sans-serif</FontFamily>
+
+    <Style x:Key="DisplayTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource PersianSemiBoldFontFamily}" />
+        <Setter Property="FontSize" Value="26" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style x:Key="HeadingTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource PersianSemiBoldFontFamily}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style x:Key="SubheadingTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource PersianMediumFontFamily}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+    </Style>
+
+    <Style x:Key="BodyTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource PersianFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style x:Key="CaptionTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource PersianFontFamily}" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+    </Style>
+
+    <!-- Numeric/currency cells always render LTR with tabular digits, even inside an RTL grid row. -->
+    <Style x:Key="NumericTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource TabularNumberFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FlowDirection" Value="LeftToRight" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style x:Key="MonoLabelTextStyle" TargetType="TextBlock" BasedOn="{StaticResource NumericTextStyle}">
+        <Setter Property="TextAlignment" Value="Left" />
+        <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+</ResourceDictionary>

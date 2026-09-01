@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Section 23 — the mandatory corporate palette. Every screen must draw from these brushes
+        (never a hardcoded Color literal in a view) so the whole application stays visually
+        consistent and a future palette change is a one-file edit.
+    -->
+
+    <Color x:Key="PrimaryNavyColor">#0B1F3A</Color>
+    <Color x:Key="DeepBlueColor">#123B66</Color>
+    <Color x:Key="ElectricBlueColor">#1677C8</Color>
+    <Color x:Key="IndustrialCyanColor">#25A7D9</Color>
+    <Color x:Key="BackgroundColor">#F4F7FA</Color>
+    <Color x:Key="SurfaceColor">#FFFFFF</Color>
+    <Color x:Key="PrimaryTextColor">#162231</Color>
+    <Color x:Key="SecondaryTextColor">#64748B</Color>
+    <Color x:Key="SuccessColor">#14865C</Color>
+    <Color x:Key="WarningColor">#D68A12</Color>
+    <Color x:Key="ErrorColor">#C43D3D</Color>
+    <Color x:Key="BorderColor">#D8E0E8</Color>
+
+    <SolidColorBrush x:Key="PrimaryNavyBrush" Color="{StaticResource PrimaryNavyColor}" />
+    <SolidColorBrush x:Key="DeepBlueBrush" Color="{StaticResource DeepBlueColor}" />
+    <SolidColorBrush x:Key="ElectricBlueBrush" Color="{StaticResource ElectricBlueColor}" />
+    <SolidColorBrush x:Key="IndustrialCyanBrush" Color="{StaticResource IndustrialCyanColor}" />
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="{StaticResource PrimaryTextColor}" />
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="{StaticResource SecondaryTextColor}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
+    <SolidColorBrush x:Key="BorderBrush1" Color="{StaticResource BorderColor}" />
+
+    <!-- Soft tint variants for badges/status chips and hover/selection backgrounds. -->
+    <SolidColorBrush x:Key="SuccessTintBrush" Color="#E4F5EC" />
+    <SolidColorBrush x:Key="WarningTintBrush" Color="#FBF0DD" />
+    <SolidColorBrush x:Key="ErrorTintBrush" Color="#FBEAEA" />
+    <SolidColorBrush x:Key="ElectricBlueTintBrush" Color="#E7F1FB" />
+    <SolidColorBrush x:Key="RowHoverBrush" Color="#EEF3F8" />
+    <SolidColorBrush x:Key="RowAlternateBrush" Color="#FAFBFD" />
+    <SolidColorBrush x:Key="RowSelectedBrush" Color="#DCEBFA" />
+    <SolidColorBrush x:Key="OverrideTintBrush" Color="#FDF3E3" />
+    <SolidColorBrush x:Key="LockedTintBrush" Color="#EEF1F5" />
+
+</ResourceDictionary>

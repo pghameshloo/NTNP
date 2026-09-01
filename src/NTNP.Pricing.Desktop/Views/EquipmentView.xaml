@@ -1,0 +1,153 @@
+<UserControl x:Class="NTNP.Pricing.Desktop.Views.EquipmentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:NTNP.Pricing.Desktop.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:EquipmentViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <WrapPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="بانک تجهیزات" Style="{StaticResource DisplayTextStyle}" VerticalAlignment="Center" Margin="0,0,24,0" />
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="240" VerticalAlignment="Center" KeyDown="SearchBox_KeyDown" Margin="0,4" />
+            <CheckBox Content="فقط بدون قیمت" IsChecked="{Binding MissingPriceOnly}" Margin="14,0,0,0" VerticalAlignment="Center" />
+            <CheckBox Content="نمایش غیرفعال‌ها" IsChecked="{Binding IncludeInactive}" Margin="14,0,0,0" VerticalAlignment="Center" />
+            <Button Content="جستجو" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding SearchCommand}" Margin="10,0,0,0" />
+            <Button Content="درون‌ریزی از اکسل" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ImportFromExcelCommand}" Margin="10,0,0,0" />
+            <Button Content="+ تجهیز جدید" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding NewCommand}" Margin="10,0,0,0" />
+        </WrapPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.3*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Padding="0">
+                <DataGrid ItemsSource="{Binding Equipment}" SelectedItem="{Binding SelectedEquipment}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="کد" Binding="{Binding Code}" Width="90" />
+                        <DataGridTextColumn Header="شرح (فارسی)" Binding="{Binding DescriptionFa}" Width="*" />
+                        <DataGridTextColumn Header="برند" Binding="{Binding Brand}" Width="100" />
+                        <DataGridTextColumn Header="واحد" Binding="{Binding Unit}" Width="60" />
+                        <DataGridTemplateColumn Header="قیمت فعلی (ریال)" Width="140">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding CurrentPrice.FinalUnitCostIrr, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="وضعیت قیمت" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Style="{StaticResource BadgeErrorStyle}" Visibility="{Binding HasMissingPrice, Converter={StaticResource TruthyToVisibility}}">
+                                            <TextBlock Text="بدون قیمت" Style="{StaticResource BadgeTextStyle}" />
+                                        </Border>
+                                        <Border Style="{StaticResource BadgeWarningStyle}" Visibility="{Binding HasExpiredPrice, Converter={StaticResource TruthyToVisibility}}">
+                                            <TextBlock Text="منقضی" Style="{StaticResource BadgeTextStyle}" />
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Padding="0" Visibility="{Binding IsEditing, Converter={StaticResource TruthyToVisibility}}">
+                <TabControl Margin="16">
+                    <TabItem Header="مشخصات فنی">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock Text="کد کالا *" Style="{StaticResource CaptionTextStyle}" />
+                                <TextBox Text="{Binding FormCode}" IsEnabled="{Binding IsNew}" Margin="0,4,0,12" />
+                                <TextBlock Text="شماره فنی قطعه" Style="{StaticResource CaptionTextStyle}" />
+                                <TextBox Text="{Binding FormTechnicalPartNumber}" Margin="0,4,0,12" />
+                                <TextBlock Text="شرح فارسی *" Style="{StaticResource CaptionTextStyle}" />
+                                <TextBox Text="{Binding FormDescriptionFa}" Margin="0,4,0,12" />
+                                <TextBlock Text="شرح انگلیسی *" Style="{StaticResource CaptionTextStyle}" />
+                                <TextBox Text="{Binding FormDescriptionEn}" FlowDirection="LeftToRight" TextAlignment="Right" Margin="0,4,0,12" />
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="دسته" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormCategory}" Margin="0,4,0,0" /></StackPanel>
+                                    <StackPanel Grid.Column="2"><TextBlock Text="زیردسته" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormSubcategory}" Margin="0,4,0,0" /></StackPanel>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="برند" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormBrand}" Margin="0,4,0,0" /></StackPanel>
+                                    <StackPanel Grid.Column="2"><TextBlock Text="مدل" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormModel}" Margin="0,4,0,0" /></StackPanel>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="سازنده" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormManufacturer}" Margin="0,4,0,0" /></StackPanel>
+                                    <StackPanel Grid.Column="2"><TextBlock Text="تأمین‌کننده" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormSupplier}" Margin="0,4,0,0" /></StackPanel>
+                                </Grid>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0"><TextBlock Text="واحد *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormUnit}" Margin="0,4,0,0" /></StackPanel>
+                                    <StackPanel Grid.Column="2"><TextBlock Text="زمان تحویل (روز)" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormLeadTimeDays}" Margin="0,4,0,0" /></StackPanel>
+                                </Grid>
+                                <TextBlock Text="یادداشت" Style="{StaticResource CaptionTextStyle}" />
+                                <TextBox Text="{Binding FormNotes}" AcceptsReturn="True" TextWrapping="Wrap" Height="56" Margin="0,4,0,12" />
+                                <CheckBox Content="فعال" IsChecked="{Binding FormIsActive}" Visibility="{Binding IsNew, Converter={StaticResource FalsyToVisibility}}" Margin="0,0,0,16" />
+                                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" Visibility="{Binding ErrorMessage, Converter={StaticResource TruthyToVisibility}}" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="ذخیره" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SaveCommand}" Margin="0,0,10,0" />
+                                    <Button Content="انصراف" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding CancelEditCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="تاریخچه قیمت" Visibility="{Binding IsNew, Converter={StaticResource FalsyToVisibility}}">
+                        <DockPanel Margin="0,16,0,0">
+                            <Border DockPanel.Dock="Top" Style="{StaticResource CardBorderStyle}" Padding="14" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Text="ثبت قیمت جدید" Style="{StaticResource SubheadingTextStyle}" Margin="0,0,0,10" />
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0"><TextBlock Text="واحد پول خرید" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding NewPriceCurrencyCode}" Margin="0,4,0,0" /></StackPanel>
+                                        <StackPanel Grid.Column="2"><TextBlock Text="تاریخ اعتبار" Style="{StaticResource CaptionTextStyle}" /><DatePicker SelectedDate="{Binding NewPriceEffectiveAt}" Margin="0,4,0,0" /></StackPanel>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0"><TextBlock Text="قیمت ارزی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding NewPriceForeignUnitPrice}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                                        <StackPanel Grid.Column="2"><TextBlock Text="قیمت ریالی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding NewPriceRialUnitPrice}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                                    </Grid>
+                                    <TextBlock Text="منبع قیمت" Style="{StaticResource CaptionTextStyle}" />
+                                    <TextBox Text="{Binding NewPriceSourceText}" Margin="0,4,0,10" />
+                                    <Button Content="ثبت قیمت" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding AddPriceCommand}" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </Border>
+                            <DataGrid ItemsSource="{Binding PriceHistory}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ارز" Binding="{Binding PurchaseCurrencyCode}" Width="60" />
+                                    <DataGridTemplateColumn Header="قیمت نهایی (ریال)" Width="140">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate><TextBlock Text="{Binding FinalUnitCostIrr, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" /></DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="تاریخ اعتبار" Binding="{Binding EffectiveAtUtc, StringFormat='{}{0:yyyy/MM/dd}'}" Width="110" />
+                                    <DataGridTextColumn Header="منبع" Binding="{Binding PriceSourceText}" Width="*" />
+                                    <DataGridTextColumn Header="ثبت‌کننده" Binding="{Binding CreatedByUserName}" Width="120" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </TabItem>
+                </TabControl>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Visibility="{Binding IsEditing, Converter={StaticResource FalsyToVisibility}}">
+                <TextBlock Text="برای مشاهده یا ویرایش، یک تجهیز را از فهرست انتخاب کنید." Style="{StaticResource SubheadingTextStyle}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

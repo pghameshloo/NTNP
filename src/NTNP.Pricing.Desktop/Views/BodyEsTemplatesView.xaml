@@ -1,0 +1,118 @@
+<UserControl x:Class="NTNP.Pricing.Desktop.Views.BodyEsTemplatesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:NTNP.Pricing.Desktop.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:BodyEsTemplatesViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" x:Name="Root">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+            <TextBlock Text="قالب‌های BODY+ES" Style="{StaticResource DisplayTextStyle}" VerticalAlignment="Center" Margin="0,0,24,0" />
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="220" VerticalAlignment="Center" KeyDown="SearchBox_KeyDown" />
+            <Button Content="جستجو" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding SearchCommand}" Margin="10,0,0,0" />
+            <Button Content="+ قالب جدید" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding NewCommand}" Margin="10,0,0,0" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="1.6*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Padding="0">
+                <DataGrid ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="کد" Binding="{Binding TemplateCode}" Width="90" />
+                        <DataGridTextColumn Header="نام قالب" Binding="{Binding TemplateName}" Width="*" />
+                        <DataGridTextColumn Header="خانواده محصول" Binding="{Binding ProductFamilyName}" Width="130" />
+                        <DataGridTemplateColumn Header="وضعیت" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource BadgeInfoStyle}">
+                                        <TextBlock Text="{Binding Status, Converter={StaticResource StatusToPersianLabel}}" Style="{StaticResource BadgeTextStyle}" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Visibility="{Binding IsEditing, Converter={StaticResource TruthyToVisibility}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <TextBlock Text="مشخصات قالب BODY+ES" Style="{StaticResource HeadingTextStyle}" HorizontalAlignment="Left" />
+                            <Button Content="تأیید" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ApproveCommand}" HorizontalAlignment="Right"
+                                    Visibility="{Binding IsNew, Converter={StaticResource FalsyToVisibility}}" />
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="کد قالب *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormTemplateCode}" IsEnabled="{Binding IsNew}" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="نام قالب *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding FormTemplateName}" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="خانواده محصول *" Style="{StaticResource CaptionTextStyle}" />
+                                <ComboBox ItemsSource="{Binding ProductFamilies}" SelectedItem="{Binding FormProductFamily}" DisplayMemberPath="Name" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="تیپ تابلو *" Style="{StaticResource CaptionTextStyle}" />
+                                <ComboBox ItemsSource="{Binding PanelTypes}" SelectedItem="{Binding FormPanelType}" DisplayMemberPath="Name" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <TextBlock Text="ابعاد تابلو" Style="{StaticResource CaptionTextStyle}" />
+                        <TextBox Text="{Binding FormPanelDimensions}" Margin="0,4,0,12" />
+                        <TextBlock Text="یادداشت" Style="{StaticResource CaptionTextStyle}" />
+                        <TextBox Text="{Binding FormNotes}" Margin="0,4,0,16" />
+
+                        <Separator Margin="0,0,0,16" />
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="اقلام BODY+ES" Style="{StaticResource HeadingTextStyle}" HorizontalAlignment="Left" />
+                            <Button Content="+ افزودن ردیف" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding AddItemLineCommand}" HorizontalAlignment="Right" />
+                        </Grid>
+
+                        <DataGrid ItemsSource="{Binding Items}" IsReadOnly="False" AutoGenerateColumns="False" MaxHeight="340" Margin="0,10,0,0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="کد قطعه" Binding="{Binding ComponentCode}" Width="90" />
+                                <DataGridTextColumn Header="شرح فارسی" Binding="{Binding DescriptionFa}" Width="*" />
+                                <DataGridTextColumn Header="واحد" Binding="{Binding Unit}" Width="55" />
+                                <DataGridTextColumn Header="تعداد" Binding="{Binding QuantityPerPanel}" Width="70" />
+                                <DataGridTextColumn Header="ضایعات (%)" Binding="{Binding WastePercentage}" Width="85" />
+                                <DataGridTemplateColumn Header="قیمت واحد (ریال)" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding UnitCostIrr, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" /></DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="حذف" Style="{StaticResource SecondaryButtonStyle}" Padding="8,3"
+                                                    Command="{Binding DataContext.RemoveItemLineCommand, ElementName=Root}" CommandParameter="{Binding}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" Visibility="{Binding ErrorMessage, Converter={StaticResource TruthyToVisibility}}" Margin="0,12,0,12" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <Button Content="ذخیره" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SaveCommand}" Margin="0,0,10,0" />
+                            <Button Content="انصراف" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding CancelEditCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Visibility="{Binding IsEditing, Converter={StaticResource FalsyToVisibility}}">
+                <TextBlock Text="برای مشاهده یا ویرایش، یک قالب BODY+ES را از فهرست انتخاب کنید." Style="{StaticResource SubheadingTextStyle}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

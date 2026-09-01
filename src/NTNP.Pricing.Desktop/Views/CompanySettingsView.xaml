@@ -1,0 +1,84 @@
+<UserControl x:Class="NTNP.Pricing.Desktop.Views.CompanySettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:NTNP.Pricing.Desktop.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:CompanySettingsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="820">
+            <TextBlock Text="تنظیمات شرکت و سامانه" Style="{StaticResource DisplayTextStyle}" Margin="0,0,0,20" />
+            <ProgressBar IsIndeterminate="True" Visibility="{Binding IsBusy, Converter={StaticResource TruthyToVisibility}}" Margin="0,0,0,16" />
+
+            <TabControl>
+                <TabItem Header="اطلاعات شرکت">
+                    <StackPanel Margin="0,20,0,0">
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="نام حقوقی (فارسی) *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding LegalNameFa}" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="نام حقوقی (انگلیسی) *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding LegalNameEn}" FlowDirection="LeftToRight" TextAlignment="Right" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <TextBlock Text="آدرس" Style="{StaticResource CaptionTextStyle}" />
+                        <TextBox Text="{Binding Address}" Margin="0,4,0,12" />
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="تلفن" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding Phone}" FlowDirection="LeftToRight" TextAlignment="Right" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="ایمیل" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding Email}" FlowDirection="LeftToRight" TextAlignment="Right" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <TextBlock Text="وب‌سایت" Style="{StaticResource CaptionTextStyle}" />
+                        <TextBox Text="{Binding Website}" FlowDirection="LeftToRight" TextAlignment="Right" Margin="0,4,0,12" />
+                        <TextBlock Text="مدت اعتبار نرخ ارز پیش از منقضی شدن (روز)" Style="{StaticResource CaptionTextStyle}" />
+                        <TextBox Text="{Binding StaleExchangeRateDays}" FlowDirection="LeftToRight" Margin="0,4,0,20" />
+                    </StackPanel>
+                </TabItem>
+
+                <TabItem Header="قالب گزارش و پیشنهاد قیمت">
+                    <StackPanel Margin="0,20,0,0">
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="عنوان پیشنهاد قیمت (فارسی)" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultQuotationTitleFa}" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="عنوان پیشنهاد قیمت (انگلیسی)" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultQuotationTitleEn}" FlowDirection="LeftToRight" TextAlignment="Right" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="برچسب محرمانگی (فارسی)" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding ConfidentialityLabelFa}" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="برچسب محرمانگی (انگلیسی)" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding ConfidentialityLabelEn}" FlowDirection="LeftToRight" TextAlignment="Right" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="شرایط تحویل" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultDeliveryTerms}" Margin="0,4,0,12" />
+                        <TextBlock Text="شرایط پرداخت" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultPaymentTerms}" Margin="0,4,0,12" />
+                        <TextBlock Text="شرایط گارانتی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultWarrantyTerms}" Margin="0,4,0,12" />
+                        <TextBlock Text="شرایط بازرسی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultInspectionTerms}" Margin="0,4,0,12" />
+                        <TextBlock Text="شرایط بسته‌بندی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultPackingTerms}" Margin="0,4,0,12" />
+                        <TextBlock Text="شرایط حمل" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultTransportationTerms}" Margin="0,4,0,12" />
+                        <TextBlock Text="یادداشت مالیات و عوارض" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultTaxesAndDutiesNote}" Margin="0,4,0,12" />
+                        <TextBlock Text="استثنائات دامنه کار" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding DefaultScopeExclusions}" AcceptsReturn="True" TextWrapping="Wrap" Height="56" Margin="0,4,0,16" />
+
+                        <Separator Margin="0,0,0,16" />
+                        <TextBlock Text="بلوک امضا" Style="{StaticResource SubheadingTextStyle}" Margin="0,0,0,12" />
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="نام تهیه‌کننده" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding PreparedByName}" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="سمت تهیه‌کننده" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding PreparedByPosition}" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="نام مدیر بازرگانی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding CommercialManagerName}" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="سمت مدیر بازرگانی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding CommercialManagerPosition}" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="نام مدیرعامل" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding ManagingDirectorName}" Margin="0,4,0,0" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="سمت مدیرعامل" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding ManagingDirectorPosition}" Margin="0,4,0,0" /></StackPanel>
+                        </Grid>
+                        <CheckBox Content="نمایش بلوک تأیید مشتری در پیشنهاد قیمت" IsChecked="{Binding EnableCustomerAcceptanceBlock}" Margin="0,0,0,20" />
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" Visibility="{Binding ErrorMessage, Converter={StaticResource TruthyToVisibility}}" Margin="0,10,0,12" />
+            <Button Content="ذخیره تنظیمات" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Margin="0,10,0,20" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

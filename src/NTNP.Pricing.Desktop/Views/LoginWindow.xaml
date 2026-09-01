@@ -1,0 +1,84 @@
+<Window x:Class="NTNP.Pricing.Desktop.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:NTNP.Pricing.Desktop.ViewModels"
+        d:DataContext="{d:DesignInstance Type=vm:LoginViewModel}"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="ورود به سامانه قیمت‌گذاری نوین طرح نیرو پارس"
+        Height="620" Width="980" WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1.1*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Brand panel -->
+        <Border Grid.Column="0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="{StaticResource PrimaryNavyColor}" Offset="0" />
+                    <GradientStop Color="{StaticResource DeepBlueColor}" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel VerticalAlignment="Center" Margin="56">
+                <Image Source="/Resources/logo.png" Width="72" Height="72" HorizontalAlignment="Left" />
+                <TextBlock Text="موتور قیمت‌گذاری NTNP" Foreground="White" FontFamily="{StaticResource PersianSemiBoldFontFamily}" FontSize="28" Margin="0,28,0,8" />
+                <TextBlock Text="Novin Tarh Niro Pars — Pricing Engine" Foreground="#B9C6D6" FontFamily="{StaticResource LatinFontFamily}" FontSize="14" FlowDirection="LeftToRight" HorizontalAlignment="Left" />
+                <TextBlock Text="سامانه یکپارچه قیمت‌گذاری، فهرست مواد و صدور پیشنهاد فنی و مالی برای تابلوهای فشار متوسط و ضعیف"
+                           Foreground="#D6E0EC" FontSize="13.5" TextWrapping="Wrap" Margin="0,26,0,0" LineHeight="24" />
+            </StackPanel>
+        </Border>
+
+        <!-- Form panel -->
+        <Grid Grid.Column="1" Background="{StaticResource SurfaceBrush}" Margin="0">
+            <StackPanel VerticalAlignment="Center" Margin="64,0">
+                <TextBlock Text="ورود به سامانه" Style="{StaticResource DisplayTextStyle}" Margin="0,0,0,6" />
+                <TextBlock Text="برای ادامه، نام کاربری و رمز عبور خود را وارد کنید." Style="{StaticResource SubheadingTextStyle}" Margin="0,0,0,28" />
+
+                <TextBlock Text="نام کاربری یا ایمیل" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,6" />
+                <TextBox x:Name="UserNameBox" Text="{Binding UserNameOrEmail, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,16" />
+
+                <TextBlock Text="رمز عبور" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,6" />
+                <PasswordBox x:Name="PasswordBox" Margin="0,0,0,10" KeyDown="PasswordBox_KeyDown" />
+
+                <CheckBox Content="مرا به خاطر بسپار" IsChecked="{Binding RememberMe}" Margin="0,4,0,20" FlowDirection="RightToLeft" />
+
+                <Button Content="ورود" Style="{StaticResource PrimaryButtonStyle}" Click="LoginButton_Click" HorizontalAlignment="Stretch" />
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" Margin="0,14,0,0"
+                           Visibility="{Binding ErrorMessage, Converter={StaticResource TruthyToVisibility}}" />
+
+                <ProgressBar IsIndeterminate="True" Margin="0,16,0,0" Visibility="{Binding IsBusy, Converter={StaticResource TruthyToVisibility}}" />
+
+                <Separator Margin="0,28,0,20" />
+
+                <TextBlock Text="آدرس سرور" Style="{StaticResource CaptionTextStyle}" Margin="0,0,0,6" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding ServerUrl, UpdateSourceTrigger=PropertyChanged}" FlowDirection="LeftToRight" TextAlignment="Left" Margin="0,0,8,0" />
+                    <Button Grid.Column="1" Content="آزمایش اتصال" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding TestConnectionCommand}" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <Ellipse Width="9" Height="9" Margin="0,0,7,0" VerticalAlignment="Center">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="{StaticResource ErrorBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ConnectionOk}" Value="True">
+                                        <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+                    <TextBlock Text="{Binding ConnectionStatus}" Style="{StaticResource CaptionTextStyle}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

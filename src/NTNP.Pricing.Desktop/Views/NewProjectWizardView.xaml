@@ -1,0 +1,175 @@
+<UserControl x:Class="NTNP.Pricing.Desktop.Views.NewProjectWizardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:NTNP.Pricing.Desktop.ViewModels"
+             d:DataContext="{d:DesignInstance Type=vm:NewProjectWizardViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="900" HorizontalAlignment="Stretch">
+            <TextBlock Text="پروژه قیمت‌گذاری جدید" Style="{StaticResource DisplayTextStyle}" Margin="0,0,0,6" />
+
+            <!-- Step indicator -->
+            <ItemsControl ItemsSource="{Binding Steps}" Margin="0,10,0,24">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="12,6" Margin="0,0,10,0" CornerRadius="14" Background="{StaticResource BackgroundBrush}">
+                            <TextBlock Text="{Binding}" Style="{StaticResource CaptionTextStyle}" />
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap" Visibility="{Binding ErrorMessage, Converter={StaticResource TruthyToVisibility}}" Margin="0,0,0,16" />
+            <ProgressBar IsIndeterminate="True" Visibility="{Binding IsBusy, Converter={StaticResource TruthyToVisibility}}" Margin="0,0,0,16" />
+
+            <!-- Step 1 -->
+            <Border>
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource CardBorderStyle}">
+                        <Style.Triggers><DataTrigger Binding="{Binding CurrentStep}" Value="0"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <TextBlock Text="اطلاعات پروژه و تنظیمات قیمت‌گذاری" Style="{StaticResource HeadingTextStyle}" Margin="0,0,0,16" />
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock Text="کد پروژه *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding ProjectCode}" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="نام پروژه *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding ProjectName}" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+                    <TextBlock Text="مشتری *" Style="{StaticResource CaptionTextStyle}" />
+                    <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding Customer}" DisplayMemberPath="CompanyName" Margin="0,4,0,12" />
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock Text="شماره استعلام (RFQ)" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding RfqNumber}" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="تاریخ استعلام" Style="{StaticResource CaptionTextStyle}" /><DatePicker SelectedDate="{Binding InquiryDate}" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+
+                    <Separator Margin="0,4,0,16" />
+                    <TextBlock Text="تنظیمات قیمت‌گذاری" Style="{StaticResource SubheadingTextStyle}" Margin="0,0,0,12" />
+                    <TextBlock Text="پروفایل قیمت‌گذاری (اختیاری — مقادیر پیش‌فرض را اعمال می‌کند)" Style="{StaticResource CaptionTextStyle}" />
+                    <ComboBox ItemsSource="{Binding PricingProfiles}" SelectedItem="{Binding PricingProfile}" DisplayMemberPath="Name" Margin="0,4,0,12" />
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock Text="ارز پیشنهاد قیمت" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding QuotationCurrencyCode}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="روش قیمت‌گذاری" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding PricingMethod}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock Text="سهم ریالی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding RialShare}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="سهم ارزی" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding ForeignShare}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="4"><TextBlock Text="نرخ (مثلاً 0.30)" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding PricingRate}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+
+                    <Button Content="ایجاد پروژه و ادامه" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding CreateProjectCommand}" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <!-- Step 2 -->
+            <Border Margin="0,20,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource CardBorderStyle}">
+                        <Style.Triggers><DataTrigger Binding="{Binding CurrentStep}" Value="1"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <TextBlock Text="انتخاب تیپ تابلو و تولید خودکار BOM" Style="{StaticResource HeadingTextStyle}" Margin="0,0,0,6" />
+                    <TextBlock Text="با انتخاب تیپ تابلو، فهرست BOM و BODY+ES و هزینه به‌صورت خودکار محاسبه می‌شود." Style="{StaticResource SubheadingTextStyle}" Margin="0,0,0,16" TextWrapping="Wrap" />
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="10" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding TemplateSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Grid.Column="2" Content="جستجوی تیپ تابلو" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding SearchTemplatesCommand}" />
+                    </Grid>
+                    <ComboBox ItemsSource="{Binding TemplateResults}" SelectedItem="{Binding SelectedTemplate}" DisplayMemberPath="TemplateName" Margin="0,0,0,12" />
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock Text="کد سلول *" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding CellCode}" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="تعداد تابلو" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding QuantityOfPanels}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="4"><TextBlock Text="سایر هزینه‌های مستقیم" Style="{StaticResource CaptionTextStyle}" /><TextBox Text="{Binding OtherDirectCostPerPanel}" FlowDirection="LeftToRight" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+                    <Button Content="+ افزودن ردیف تابلو" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding AddLineCommand}" HorizontalAlignment="Left" Margin="0,0,0,20" />
+
+                    <DataGrid ItemsSource="{Binding CurrentRevision.Lines}" MaxHeight="240">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="سلول" Binding="{Binding CellCode}" Width="80" />
+                            <DataGridTextColumn Header="تیپ تابلو" Binding="{Binding Description}" Width="*" />
+                            <DataGridTextColumn Header="تعداد" Binding="{Binding QuantityOfPanels}" Width="70" />
+                            <DataGridTemplateColumn Header="هزینه کل (ریال)" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate><TextBlock Text="{Binding TotalLineCost, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" /></DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                        <Button Content="مرحله قبل" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding GoBackCommand}" Margin="0,0,10,0" />
+                        <Button Content="مرحله بعد: TOTAL" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding GoToTotalsStepCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Step 3 -->
+            <Border Margin="0,20,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource CardBorderStyle}">
+                        <Style.Triggers><DataTrigger Binding="{Binding CurrentStep}" Value="2"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <TextBlock Text="TOTAL — خلاصه پروژه" Style="{StaticResource HeadingTextStyle}" Margin="0,0,0,16" />
+                    <UniformGrid Columns="2" Rows="3">
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="هزینه کل پروژه (ریال)" Style="{StaticResource CaptionTextStyle}" /><TextBlock Text="{Binding CurrentRevision.Totals.TotalProjectCostIrr, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" FontSize="20" /></StackPanel>
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="مبلغ فروش کل (ریال)" Style="{StaticResource CaptionTextStyle}" /><TextBlock Text="{Binding CurrentRevision.Totals.TotalProjectSellingPriceIrr, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" FontSize="20" /></StackPanel>
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="سود پروژه (ریال)" Style="{StaticResource CaptionTextStyle}" /><TextBlock Text="{Binding CurrentRevision.Totals.ProjectProfitIrr, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" FontSize="20" Foreground="{StaticResource SuccessBrush}" /></StackPanel>
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="حاشیه سود ناخالص" Style="{StaticResource CaptionTextStyle}" /><TextBlock Text="{Binding CurrentRevision.Totals.ProjectGrossMargin, Converter={StaticResource Percent}}" Style="{StaticResource NumericTextStyle}" FontSize="20" /></StackPanel>
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="مبلغ قابل پرداخت ریالی" Style="{StaticResource CaptionTextStyle}" /><TextBlock Text="{Binding CurrentRevision.Totals.TotalRialPayable, Converter={StaticResource IrrAmount}}" Style="{StaticResource NumericTextStyle}" FontSize="20" /></StackPanel>
+                        <StackPanel Margin="0,0,0,14"><TextBlock Text="مبلغ قابل پرداخت ارزی" Style="{StaticResource CaptionTextStyle}" /><TextBlock Text="{Binding CurrentRevision.Totals.TotalForeignPayable, Converter={StaticResource ForeignAmount}}" Style="{StaticResource NumericTextStyle}" FontSize="20" /></StackPanel>
+                    </UniformGrid>
+
+                    <Border Style="{StaticResource BadgeSuccessStyle}" HorizontalAlignment="Left" Visibility="{Binding CurrentRevision.Totals.ReconciliationPassed, Converter={StaticResource TruthyToVisibility}}">
+                        <TextBlock Text="تطبیق محاسبات: موفق ✓" Style="{StaticResource BadgeTextStyle}" />
+                    </Border>
+                    <Border Style="{StaticResource BadgeErrorStyle}" HorizontalAlignment="Left" Visibility="{Binding CurrentRevision.Totals.ReconciliationPassed, Converter={StaticResource FalsyToVisibility}}">
+                        <TextBlock Text="تطبیق محاسبات: ناموفق" Style="{StaticResource BadgeTextStyle}" />
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                        <Button Content="مرحله قبل" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding GoBackCommand}" Margin="0,0,10,0" />
+                        <Button Content="مرحله بعد: بازبینی" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding GoToReviewStepCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Step 4 -->
+            <Border Margin="0,20,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource CardBorderStyle}">
+                        <Style.Triggers><DataTrigger Binding="{Binding CurrentStep}" Value="3"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers>
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <TextBlock Text="بازبینی و تکمیل" Style="{StaticResource HeadingTextStyle}" Margin="0,0,0,12" />
+                    <TextBlock TextWrapping="Wrap" Style="{StaticResource BodyTextStyle}" Margin="0,0,0,20">
+                        پروژه «<Run Text="{Binding CreatedProject.ProjectName}" FontFamily="{StaticResource PersianMediumFontFamily}" />» با <Run Text="{Binding CurrentRevision.Lines.Count}" />
+                        ردیف تابلو ایجاد شد. مراحل بررسی فنی/بازرگانی، تأیید نهایی و صدور پیشنهاد قیمت در فضای کاری پروژه انجام می‌شود.
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="مرحله قبل" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding GoBackCommand}" Margin="0,0,10,0" />
+                        <Button Content="ورود به فضای کاری پروژه" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding FinishCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

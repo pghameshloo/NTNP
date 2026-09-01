@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
@@ -30,6 +31,8 @@
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <!-- Section 7 (ASSUMPTIONS.md) — encrypts the "remember me" refresh token at rest via Windows DPAPI. -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,9 +40,23 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- This WPF SDK project's implicit-usings set is narrower than the ASP.NET Core/console one
+         (no System.Net.Http, no System.IO) even with <ImplicitUsings>enable</ImplicitUsings> — both
+         are used pervasively (every *ApiClient.cs takes an HttpClient; several view models read/write
+         report files), so they're added project-wide here instead of per-file. -->
+    <Using Include="System.Net.Http" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\Fonts\Vazirmatn-Regular.ttf" />
     <Resource Include="Assets\Fonts\Vazirmatn-Medium.ttf" />
+    <Resource Include="Assets\Fonts\Vazirmatn-SemiBold.ttf" />
+    <Resource Include="Assets\Fonts\Vazirmatn-Bold.ttf" />
     <Resource Include="Resources\logo.png" />
+    <None Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
