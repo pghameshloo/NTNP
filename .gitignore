@@ -9,6 +9,11 @@ obj/
 TestResults/
 *.trx
 
+## Logs (Serilog rolling file sink — see appsettings.json; on the real Windows target these write
+## under the configured C:\NTNP\... path, never into the repo)
+*.log
+src/NTNP.Pricing.Api/C:*
+
 ## Rider/VS Code
 .idea/
 .vscode/

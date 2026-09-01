@@ -11,6 +11,7 @@ using NTNP.Pricing.Infrastructure;
 using NTNP.Pricing.Infrastructure.Auth;
 using NTNP.Pricing.Infrastructure.Persistence;
 using NTNP.Pricing.Infrastructure.Seed;
+using NTNP.Pricing.Reporting;
 using Serilog;
 
 // Section 5/34: hosted as a Windows Service in production (see deployment/server), runs standalone
@@ -34,6 +35,7 @@ try
 
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddApplication();
+    builder.Services.AddReporting();
     builder.Services.AddNtnpAuthorization();
 
     var jwtSection = builder.Configuration.GetSection("Jwt");

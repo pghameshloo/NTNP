@@ -6,6 +6,7 @@ using NTNP.Pricing.Application.Currencies;
 using NTNP.Pricing.Application.Customers;
 using NTNP.Pricing.Application.Dashboard;
 using NTNP.Pricing.Application.Equipment;
+using NTNP.Pricing.Application.Files;
 using NTNP.Pricing.Application.PanelTemplates;
 using NTNP.Pricing.Application.PricingProfiles;
 using NTNP.Pricing.Application.Projects;
@@ -32,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ICompanySettingsService, CompanySettingsService>();
+        services.AddScoped<IFileService, FileService>();
 
         services.AddValidatorsFromAssemblyContaining<Validators.CreateCustomerRequestValidator>();
 
