@@ -8,8 +8,12 @@ public abstract class Entity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>SQL Server ROWVERSION token, used for optimistic-concurrency conflict detection.</summary>
-    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    /// <summary>
+    /// SQL Server ROWVERSION token, used for optimistic-concurrency conflict detection. Left as the
+    /// CLR default (null) rather than initialized to an empty array — EF Core treats a non-default
+    /// value as "already set by the app" and would skip database-side generation on insert.
+    /// </summary>
+    public byte[] RowVersion { get; set; } = null!;
 }
 
 /// <summary>
