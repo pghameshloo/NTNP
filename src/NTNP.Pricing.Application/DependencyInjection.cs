@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using NTNP.Pricing.Application.Audit;
 using NTNP.Pricing.Application.BodyEs;
@@ -31,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<IAuditQueryService, AuditQueryService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ICompanySettingsService, CompanySettingsService>();
+
+        services.AddValidatorsFromAssemblyContaining<Validators.CreateCustomerRequestValidator>();
 
         // IEquipmentImportService, IUserManagementService and IAuthService are registered by
         // NTNP.Pricing.Infrastructure.DependencyInjection (they depend on ASP.NET Core Identity /
