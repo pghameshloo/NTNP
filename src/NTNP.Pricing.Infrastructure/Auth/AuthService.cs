@@ -42,17 +42,17 @@ public sealed class AuthService : IAuthService
         if (user is null || !user.IsActive)
         {
             await _audit.LogAsync(AuditAction.LoginFailed, "User", request.UserNameOrEmail, reason: "User not found or inactive", cancellationToken: ct);
-            throw new DomainValidationException("Invalid username or password.");
+            throw new AuthenticationFailedException("Invalid username or password.");
         }
 
         if (await _userManager.IsLockedOutAsync(user))
-            throw new DomainValidationException("This account is temporarily locked due to repeated failed sign-in attempts.");
+            throw new AuthenticationFailedException("This account is temporarily locked due to repeated failed sign-in attempts.");
 
         if (!await _userManager.CheckPasswordAsync(user, request.Password))
         {
             await _userManager.AccessFailedAsync(user);
             await _audit.LogAsync(AuditAction.LoginFailed, "User", user.Id.ToString(), cancellationToken: ct);
-            throw new DomainValidationException("Invalid username or password.");
+            throw new AuthenticationFailedException("Invalid username or password.");
         }
 
         await _userManager.ResetAccessFailedCountAsync(user);
@@ -68,11 +68,11 @@ public sealed class AuthService : IAuthService
         var tokenHash = Hash(request.RefreshToken);
         var stored = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == tokenHash, ct);
         if (stored is null || !stored.IsActive)
-            throw new DomainValidationException("Refresh token is invalid or expired.");
+            throw new AuthenticationFailedException("Refresh token is invalid or expired.");
 
         var user = await _userManager.FindByIdAsync(stored.UserId.ToString());
         if (user is null || !user.IsActive)
-            throw new DomainValidationException("Refresh token is invalid or expired.");
+            throw new AuthenticationFailedException("Refresh token is invalid or expired.");
 
         // Rotate: revoke the presented token, issue a brand-new pair.
         stored.RevokedAtUtc = _clock.UtcNow;

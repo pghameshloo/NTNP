@@ -38,6 +38,11 @@ public sealed class ExceptionHandlingMiddleware
 
         switch (exception)
         {
+            case AuthenticationFailedException authFailed:
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await WriteAsync(context, new ApiErrorResponse("authentication-failed", "Authentication failed", 401, new[] { authFailed.Message }, traceId));
+                break;
+
             case NotFoundException notFound:
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 await WriteAsync(context, new ApiErrorResponse("not-found", "Resource not found", 404, new[] { notFound.Message }, traceId));

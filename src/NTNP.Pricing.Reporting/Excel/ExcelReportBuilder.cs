@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using System.Linq;
 using NTNP.Pricing.Reporting.Models;
 
 namespace NTNP.Pricing.Reporting.Excel;
@@ -9,7 +10,7 @@ public static class ExcelReportBuilder
     public static byte[] BuildBomMtoWorkbook(BomMtoReportModel model)
     {
         using var workbook = new XLWorkbook();
-        var sheet = workbook.Worksheets.Add(Truncate(model.Title, 31));
+        var sheet = workbook.Worksheets.Add(SanitizeSheetName(model.Title));
 
         WriteTitleBlock(sheet, model.Title, model.ProjectCode, model.ProjectName, model.RevisionNumber, model.GeneratedAtUtc);
 
@@ -186,4 +187,17 @@ public static class ExcelReportBuilder
     }
 
     private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max];
+
+    /// <summary>
+    /// Excel worksheet names reject <c>\ / ? * [ ] :</c>, cannot exceed 31 characters, and cannot be
+    /// empty or start/end with an apostrophe — <see cref="BomMtoReportModel.Title"/> is free text
+    /// (e.g. "Electrical BOM / Material Take-Off") supplied by the Api layer, not pre-validated
+    /// against those rules, so it is sanitized here rather than trusted verbatim.
+    /// </summary>
+    private static string SanitizeSheetName(string title)
+    {
+        var cleaned = new string(title.Select(c => "\\/?*[]:".Contains(c) ? '-' : c).ToArray()).Trim();
+        cleaned = Truncate(cleaned, 31).Trim('\'');
+        return string.IsNullOrWhiteSpace(cleaned) ? "Report" : cleaned;
+    }
 }
