@@ -122,7 +122,37 @@ once NTNP supplies the real vector logo. The Vazirmatn font files bundled under
 from the `fonts-vazirmatn` package, license text copied to `docs/licenses/OFL-1.1-Vazirmatn.txt`),
 not a placeholder.
 
-## 11. Non-critical limitations
+## 11. Desktop app / Desktop.Tests execution in this sandbox
+
+`src/NTNP.Pricing.Desktop` (the WPF client) and `tests/NTNP.Pricing.Desktop.Tests` both **build
+successfully** in this Linux sandbox via `EnableWindowsTargeting=true` (real `dotnet build`, real
+compiler, catching every C#/XAML compile error — this is not a "written but never compiled"
+delivery, same as every other project). `EnableWindowsTargeting` only unlocks *compiling* against
+Windows-only reference assemblies, though; *running* a WPF or WPF-referencing binary needs the
+actual `Microsoft.WindowsDesktop.App` shared runtime, and Microsoft has never shipped a Linux build
+of it (WPF's rendering stack is Win32/DirectX-based, not portable the way ASP.NET Core is) —
+confirmed in this sandbox via `dotnet --list-runtimes`, which lists only
+`Microsoft.NETCore.App`/`Microsoft.AspNetCore.App`. So neither the Desktop app itself nor
+Desktop.Tests can actually **execute** here, and no package install can change that.
+
+Consequences, and how each is mitigated:
+- **No live run / visual QA of the Desktop app was possible in this session** (unlike the Api, which
+  was smoke-tested live via `dotnet run` + `curl`, and the Reporting PDFs, which were rendered and
+  visually inspected). The 25 screens were built to the same real-API-wired, no-placeholder standard
+  as everything else, and reviewed by re-reading the XAML/bindings/converters for correctness, but
+  the master prompt's Section 29-style "render and look at it" verification is only possible on a
+  real Windows machine — see `docs/deployment.md`'s "Desktop client verification" note for the exact
+  steps a Windows dev/CI machine should run before the app is considered visually signed off.
+- **`tests/NTNP.Pricing.Desktop.Tests`'s 20+ ViewModel tests build and are logically complete**
+  (they compile against the real `ViewModels`/`Services.Api` classes with a fake `HttpMessageHandler`
+  standing in for the server — see `TestSupport/`), but were never actually executed by `dotnet test`
+  in this session, so "all tests pass" for this one project is a claim about compile-time
+  correctness plus manual code review, not an observed green test run. Run
+  `dotnet test tests/NTNP.Pricing.Desktop.Tests` on a Windows machine (or any machine with the
+  `Microsoft.WindowsDesktop.App` runtime installed) as the first step of any change to the Desktop
+  project.
+
+## 12. Non-critical limitations
 
 See the "Known non-critical limitations" section of the final delivery summary message for the full,
 up-to-date list (kept there rather than duplicated here so it always reflects the as-built state).
