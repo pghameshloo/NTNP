@@ -70,6 +70,31 @@ were reviewed by hand rather than compiler-validated for this reason — build a
 Windows machine or CI runner with the WiX v5 SDK (restored automatically via NuGet, no separate
 install needed) — see `docs/deployment.md`.
 
+**Update — real Windows CI build via `.github/workflows/release.yml`:** the actual `wix build` step
+was later run for real on a `windows-latest` GitHub Actions runner (see that workflow) and found two
+genuine authoring bugs the manual review above missed, both since fixed:
+
+1. `deployment/client/build-installer.ps1`'s in-place version-bump (`Get-Content -Raw | -replace ... |
+   Set-Content`) corrupted `Package.wxs`'s leading `<?xml ... ?>` declaration — a real PowerShell
+   encoding pitfall (`Get-Content`/`Set-Content`'s default encoding is host/version-dependent). Fixed
+   by reading/writing via `[System.IO.File]::ReadAllText/WriteAllText` with an explicit UTF-8-no-BOM
+   encoding instead. The same regex (`Version="[\d.]+"`) also incorrectly matched inside
+   `InstallerVersion="500"` (a substring hit) — fixed with a `\b` word-boundary anchor.
+2. `ServerAddressDialog.wxs` authored `Dialog`/`Publish`/`UI` under the `ui:` extension namespace
+   prefix. Decompiling the actual `WixToolset.Core.dll`/`WixToolset.UI.wixext.dll` (via `ilspycmd`,
+   pulled from the NuGet cache already restored in this sandbox) showed these are **core, unprefixed**
+   elements — the `ui:` namespace only owns `WixUI`. With the wrong namespace, `Fragment` correctly
+   rejected `Dialog` as unrecognized (WIX0005) rather than silently accepting it, since the real WiX
+   UI extension's `ParseElement` only handles `WixUI` under `Fragment`/`Package`/`UI`. Fixed by
+   removing the incorrect `ui:` prefix from `UI`/`Dialog`/`Publish` (and the now-unused `xmlns:ui`
+   declaration).
+
+This is a second concrete data point (alongside §11's Desktop.Tests findings) for the same underlying
+lesson: manual review of Windows-only artifacts in this sandbox is a real, honest best effort, but a
+genuine compiler run on real Windows is the only thing that actually proves correctness — which is
+exactly why `.github/workflows/release.yml` exists, rather than shipping the manually-reviewed sources
+as a final answer.
+
 ## 3. Panel Types / Product Families
 
 Panel types (`INCOMING`, `OUTGOING`, `BUS COUPLER`, `BUS RISER`, `METERING`, `AUXILIARY`, `CUSTOM`)

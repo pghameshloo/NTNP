@@ -58,7 +58,14 @@ if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXIT
 
 Write-Host "=== Step 2/3: building the MSI ===" -ForegroundColor Cyan
 $wxsPath = Join-Path $repoRoot 'installer\NTNP.Pricing.Installer\Package.wxs'
-(Get-Content $wxsPath -Raw) -replace 'Version="[\d.]+"', "Version=`"$Version`"" | Set-Content $wxsPath -NoNewline
+# Read/write via .NET directly (explicit UTF-8, no BOM) rather than Get-Content/Set-Content — their
+# default encoding varies by PowerShell version/host and can silently corrupt the leading
+# <?xml ... ?> declaration (observed as a WIX0104 "invalid XML declaration" parse failure). \bVersion=
+# (a word-boundary anchor) matches only the Package element's own Version="..." attribute, not the
+# "Version" inside InstallerVersion="500" a plain 'Version=' substring match would also hit.
+$wxsContent = [System.IO.File]::ReadAllText($wxsPath, [System.Text.Encoding]::UTF8)
+$wxsContent = $wxsContent -replace '\bVersion="[\d.]+"', "Version=`"$Version`""
+[System.IO.File]::WriteAllText($wxsPath, $wxsContent, [System.Text.UTF8Encoding]::new($false))
 
 dotnet build $installerProject -c Release
 if ($LASTEXITCODE -ne 0) { throw "dotnet build (WiX) failed with exit code $LASTEXITCODE." }
