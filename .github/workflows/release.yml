@@ -1,0 +1,143 @@
+name: Release build
+
+# Builds the complete NTNP Pricing Engine release on a real Windows runner (windows-latest) — the
+# WPF Desktop app, Desktop.Tests, and the WiX MSI installer all require genuine Windows and cannot be
+# built/run in this repository's Linux development sandbox (see ASSUMPTIONS.md §2/§11). This workflow
+# is the actual, reproducible way those artifacts get produced for real.
+#
+# Trigger manually from the Actions tab (or via the API) with the version to stamp into the MSI and
+# the release tag. Every step must succeed — a failing build or test run stops the workflow before
+# any release is created, so a published release always reflects a green build.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (plain three-part number, e.g. 1.0.0) — stamped into the MSI and used as the release tag (vX.Y.Z).'
+        required: true
+        default: '1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore & build solution (Release)
+        run: dotnet build NTNP.Pricing.sln -c Release --nologo
+
+      - name: Run Domain.Tests
+        run: dotnet test tests/NTNP.Pricing.Domain.Tests -c Release --no-build --nologo
+
+      - name: Run Infrastructure.Tests
+        run: dotnet test tests/NTNP.Pricing.Infrastructure.Tests -c Release --no-build --nologo
+
+      - name: Run Application.Tests
+        run: dotnet test tests/NTNP.Pricing.Application.Tests -c Release --no-build --nologo
+
+      - name: Run Reporting.Tests
+        run: dotnet test tests/NTNP.Pricing.Reporting.Tests -c Release --no-build --nologo
+
+      - name: Run Api.IntegrationTests
+        run: dotnet test tests/NTNP.Pricing.Api.IntegrationTests -c Release --no-build --nologo
+
+      - name: Run Desktop.Tests (first real execution — needs Windows)
+        run: dotnet test tests/NTNP.Pricing.Desktop.Tests -c Release --no-build --nologo
+
+      - name: Publish self-contained win-x64 Api server
+        run: >
+          dotnet publish src/NTNP.Pricing.Api/NTNP.Pricing.Api.csproj -c Release -r win-x64
+          -p:SelfContained=true -p:PublishReadyToRun=true -p:Version=${{ inputs.version }}
+          -o publish/api
+
+      - name: Build self-contained Desktop client + MSI installer
+        shell: pwsh
+        run: ./deployment/client/build-installer.ps1 -Version ${{ inputs.version }}
+
+      - name: Verify MSI was produced with the required filename
+        shell: pwsh
+        run: |
+          $msi = "installer/NTNP.Pricing.Installer/bin/Release/NTNP-Pricing-Setup-x64.msi"
+          if (-not (Test-Path $msi)) { throw "Expected MSI not found at $msi" }
+          $size = (Get-Item $msi).Length
+          if ($size -lt 1MB) { throw "MSI at $msi is suspiciously small ($size bytes) — build likely did not complete correctly." }
+          Write-Host "MSI OK: $msi ($size bytes)"
+
+      - name: Package server deployment zip
+        shell: pwsh
+        run: |
+          $stage = "stage/server"
+          New-Item -ItemType Directory -Path "$stage/Api" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$stage/Scripts" -Force | Out-Null
+          Copy-Item -Path "publish/api/*" -Destination "$stage/Api" -Recurse
+          Copy-Item -Path @(
+            "deployment/server/install-service.ps1",
+            "deployment/server/remove-service.ps1",
+            "deployment/server/configure-firewall.ps1",
+            "deployment/server/configure-https-selfsigned.ps1",
+            "deployment/server/health-check.ps1",
+            "deployment/server/appsettings.Production.template.json"
+          ) -Destination "$stage/Scripts"
+          Copy-Item -Path "docs/deployment.md" -Destination "$stage/README.md"
+          Compress-Archive -Path "$stage/*" -DestinationPath "NTNP-Pricing-Server-x64.zip" -Force
+
+      - name: Package database deployment zip
+        shell: pwsh
+        run: |
+          $stage = "stage/db"
+          New-Item -ItemType Directory -Path "$stage/Scripts" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$stage/Migrations" -Force | Out-Null
+          Copy-Item -Path @(
+            "deployment/database/migrate.ps1",
+            "deployment/database/create-admin.ps1",
+            "deployment/backup/backup-database.ps1",
+            "deployment/backup/restore-database.ps1"
+          ) -Destination "$stage/Scripts"
+          Copy-Item -Path "src/NTNP.Pricing.Infrastructure/Persistence/Migrations/*" -Destination "$stage/Migrations" -Recurse
+          Set-Content -Path "$stage/README.md" -Value @"
+          NTNP Pricing Engine — Database Deployment Package
+          ===================================================
+
+          Scripts/migrate.ps1        Applies pending EF Core migrations (runs NTNP.Pricing.Api.exe migrate).
+          Scripts/create-admin.ps1   Creates the first production Admin account.
+          Scripts/backup-database.ps1  / restore-database.ps1 — SQL Server backup and restore, with verification.
+
+          migrate.ps1 and create-admin.ps1 both require -InstallPath pointing at an already-deployed
+          server (see NTNP-Pricing-Server-x64.zip + install-service.ps1) — they invoke that folder's
+          NTNP.Pricing.Api.exe directly so migrations always run through the app's own EF Core model,
+          never a hand-written SQL script.
+
+          Migrations/ contains the EF Core migration source for reference/DBA review — the exact
+          schema changes that will be applied.
+
+          Full walkthrough: see Deployment-Guide.md in the release, or docs/deployment.md in the
+          source repository.
+          "@
+          Compress-Archive -Path "$stage/*" -DestinationPath "NTNP-Pricing-Database-Deployment.zip" -Force
+
+      - name: Prepare deployment guide
+        shell: pwsh
+        run: Copy-Item -Path "docs/deployment.md" -Destination "Deployment-Guide.md"
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --target "${{ github.sha }}" \
+            --title "NTNP Pricing Engine v${{ inputs.version }}" \
+            --notes "Full build produced on a windows-latest GitHub Actions runner: solution built in Release, all six test projects passing (Domain/Infrastructure/Application/Reporting/Api.IntegrationTests/Desktop.Tests), self-contained win-x64 publish, MSI installer, server deployment package, and database deployment package. See Deployment-Guide.md for installation steps." \
+            "installer/NTNP.Pricing.Installer/bin/Release/NTNP-Pricing-Setup-x64.msi" \
+            "NTNP-Pricing-Server-x64.zip" \
+            "NTNP-Pricing-Database-Deployment.zip" \
+            "Deployment-Guide.md"

@@ -60,8 +60,9 @@ start the service — finish the steps it prints first:
    `FileStorage:RootPath`, and the `Kestrel:Endpoints:Https` certificate path/password (§4 below).
 2. **Firewall** — open the port:
    ```powershell
-   New-NetFirewallRule -DisplayName 'NTNP Pricing API' -Direction Inbound -Protocol TCP -LocalPort 7240 -Action Allow
+   deployment\server\configure-firewall.ps1 -Port 7240
    ```
+   Idempotent (safe to re-run on every upgrade); pass `-Remove` during a full decommission.
 3. **Migrate**: `deployment\database\migrate.ps1 -InstallPath 'C:\Program Files\NTNP\Pricing Server'`
    (applies EF Core migrations; asks you to confirm you've taken a backup first — see §6).
 4. **Create the first admin**:
@@ -95,9 +96,14 @@ Any of the following works — Kestrel just needs a `.pfx` it can load:
   hostname from your organization's CA, export as `.pfx`, place at the path configured in
   `Kestrel:Endpoints:Https:Certificate:Path`.
 - **Public CA / Let's Encrypt**: if the server is reachable from the internet under a real domain.
-- **Self-signed, pilot-only**: `New-SelfSignedCertificate -DnsName ntnp-pricing-server -CertStoreLocation Cert:\LocalMachine\My`,
-  then export it to a `.pfx`. Desktop clients will need to trust it manually (or via Group Policy) —
-  do not ship a self-signed cert to production users without a plan to distribute trust for it.
+- **Self-signed, pilot-only**:
+  ```powershell
+  deployment\server\configure-https-selfsigned.ps1 -HostName ntnp-pricing-server `
+      -OutputPfxPath C:\NTNP\Pricing\Certs\ntnp-pricing.pfx -PfxPassword (Read-Host -AsSecureString)
+  ```
+  This also exports the public `.cer` half and prints the `Import-Certificate` command to run on each
+  client machine. Desktop clients will need to trust it manually (or via Group Policy) — do not ship a
+  self-signed cert to production users without a plan to distribute trust for it.
 
 The desktop client itself performs no certificate pinning — it uses the OS trust store like any
 other `HttpClient`, so once the certificate is trusted machine-wide (or is from a publicly trusted

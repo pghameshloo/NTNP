@@ -99,8 +99,8 @@ Write-Host ""
 Write-Host "Service '$ServiceName' installed but NOT started." -ForegroundColor Green
 Write-Host "Next steps:" -ForegroundColor Green
 Write-Host "  1. Edit '$appsettingsProdPath' — set ConnectionStrings:SqlServer, Jwt:SigningKey, FileStorage:RootPath."
-Write-Host "  2. Open the firewall port: New-NetFirewallRule -DisplayName 'NTNP Pricing API' -Direction Inbound -Protocol TCP -LocalPort $Port -Action Allow"
-Write-Host "  3. Configure the HTTPS certificate (see docs/deployment.md 'HTTPS certificate')."
+Write-Host "  2. Open the firewall port: deployment\server\configure-firewall.ps1 -Port $Port"
+Write-Host "  3. Configure the HTTPS certificate: deployment\server\configure-https-selfsigned.ps1 (pilot/internal-only — see docs/deployment.md 'HTTPS certificate' for the internal-CA/public-CA options a real production deployment should prefer)."
 Write-Host "  4. Run deployment\database\migrate.ps1 -InstallPath '$InstallPath'"
 Write-Host "  5. Run deployment\database\create-admin.ps1 -InstallPath '$InstallPath'"
 Write-Host "  6. Start-Service -Name $ServiceName"
