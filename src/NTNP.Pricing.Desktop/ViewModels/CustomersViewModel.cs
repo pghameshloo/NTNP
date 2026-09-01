@@ -45,12 +45,17 @@ public sealed partial class CustomersViewModel : ViewModelBase
     public override Task OnNavigatedToAsync() => SearchAsync();
 
     [RelayCommand]
-    private async Task SearchAsync() => await RunBusyAsync(async () =>
+    private async Task SearchAsync() => await RunBusyAsync(SearchCoreAsync);
+
+    // Unwrapped core so internal callers already inside a RunBusyAsync scope (e.g. SaveAsync's create
+    // path, which needs to reload the grid after creating a row) can reuse it without tripping
+    // RunBusyAsync's "already busy" guard — that guard would otherwise silently no-op a nested call.
+    private async Task SearchCoreAsync()
     {
         var page = await _api.SearchAsync(SearchText, 1, 200, IncludeInactive);
         Customers.Clear();
         foreach (var c in page.Items) Customers.Add(c);
-    });
+    }
 
     partial void OnSelectedCustomerChanged(CustomerDto? value)
     {
@@ -93,7 +98,7 @@ public sealed partial class CustomersViewModel : ViewModelBase
             var created = await _api.CreateAsync(new CreateCustomerRequest(
                 FormCustomerCode, FormCompanyName, FormIndustry, FormRegistrationNumber, FormTaxId,
                 FormContactPerson, FormContactPosition, FormPhone, FormEmail, FormAddress, FormNotes));
-            await SearchAsync();
+            await SearchCoreAsync();
             SelectedCustomer = Customers.FirstOrDefault(c => c.Id == created.Id);
         }
         else if (SelectedCustomer is not null)

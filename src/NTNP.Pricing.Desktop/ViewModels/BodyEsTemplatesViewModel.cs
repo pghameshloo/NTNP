@@ -54,12 +54,16 @@ public sealed partial class BodyEsTemplatesViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task SearchAsync() => await RunBusyAsync(async () =>
+    private async Task SearchAsync() => await RunBusyAsync(SearchCoreAsync);
+
+    // Unwrapped core so SaveAsync (already inside a RunBusyAsync scope) can reload the grid without
+    // tripping RunBusyAsync's "already busy" reentrancy guard.
+    private async Task SearchCoreAsync()
     {
         var page = await _api.SearchAsync(SearchText, 1, 200, null, null);
         Templates.Clear();
         foreach (var t in page.Items) Templates.Add(t);
-    });
+    }
 
     partial void OnSelectedTemplateChanged(BodyEsTemplateDto? value)
     {
@@ -110,7 +114,7 @@ public sealed partial class BodyEsTemplatesViewModel : ViewModelBase
         if (IsNew)
         {
             var created = await _api.CreateAsync(new CreateBodyEsTemplateRequest(FormTemplateCode, FormTemplateName, FormProductFamily.Id, FormPanelType.Id, FormPanelDimensions, FormNotes, items));
-            await SearchAsync();
+            await SearchCoreAsync();
             SelectedTemplate = Templates.FirstOrDefault(t => t.Id == created.Id);
         }
         else if (SelectedTemplate is not null)

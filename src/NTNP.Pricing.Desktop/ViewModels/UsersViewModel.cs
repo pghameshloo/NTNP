@@ -42,12 +42,16 @@ public sealed partial class UsersViewModel : ViewModelBase
     public override Task OnNavigatedToAsync() => LoadAsync();
 
     [RelayCommand]
-    private async Task LoadAsync() => await RunBusyAsync(async () =>
+    private async Task LoadAsync() => await RunBusyAsync(LoadCoreAsync);
+
+    // Unwrapped core so SaveAsync's create path (already inside a RunBusyAsync scope) can reload the
+    // grid without tripping RunBusyAsync's "already busy" reentrancy guard.
+    private async Task LoadCoreAsync()
     {
         var list = await _api.ListAsync();
         Users.Clear();
         foreach (var u in list) Users.Add(u);
-    });
+    }
 
     partial void OnSelectedUserChanged(UserDto? value)
     {
@@ -113,7 +117,7 @@ public sealed partial class UsersViewModel : ViewModelBase
                 return;
             }
             var created = await _api.CreateAsync(new CreateUserRequest(FormUserName, FormEmail, FormDisplayName, FormPassword, roles));
-            await LoadAsync();
+            await LoadCoreAsync();
             SelectedUser = Users.FirstOrDefault(u => u.Id == created.Id);
         }
         else if (SelectedUser is not null)

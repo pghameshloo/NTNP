@@ -163,6 +163,34 @@ Consequences, and how each is mitigated:
   `Microsoft.WindowsDesktop.App` runtime installed) as the first step of any change to the Desktop
   project.
 
+**Update — first real execution, via `.github/workflows/release.yml` on a `windows-latest` GitHub
+Actions runner:** this genuinely validated the above prediction. Desktop.Tests ran for the first time
+ever and found two real, previously-undetectable bugs, both since fixed:
+
+1. **A reentrancy bug in `ViewModelBase.RunBusyAsync`'s `if (IsBusy) return;` guard**, present in
+   every master-data ViewModel's create path (Customers, Equipment, Panel Templates, BODY+ES
+   Templates, Currencies, Pricing Profiles, Users) plus `ProjectWorkspaceViewModel.CreateNewRevisionAsync`
+   and `EquipmentViewModel.AddPriceAsync`/`ImportFromExcelAsync`. Each of these methods is itself
+   wrapped in `RunBusyAsync` and, internally, calls another `RunBusyAsync`-wrapped method (typically
+   the screen's own `SearchAsync`/`LoadAsync`) to refresh the grid after a create. Since `IsBusy` was
+   already `true` from the outer call, the inner call's guard silently no-opped — the grid never
+   refreshed and the newly created row was never selected. This could not have been caught any other
+   way: it only manifests when the code actually *runs* (a static review of the two methods in
+   isolation looks correct; the bug is only visible across the call boundary). Fixed by extracting
+   each guarded method's real logic into an unguarded `...CoreAsync` method that the guarded public
+   command delegates to, with internal nested callers invoking the `Core` method directly — see the
+   affected ViewModels' git history for the exact diff.
+2. **A path-prefix-matching bug in `tests/NTNP.Pricing.Desktop.Tests/TestSupport/FakeHttpMessageHandler.cs`**
+   (test infrastructure, not production code): its route matcher used a plain `StartsWith` with no
+   segment-boundary check and picked the *first*-registered match rather than the most specific, so a
+   route registered for `api/project-revisions/{id}` also swallowed requests to
+   `api/project-revisions/{id}/mto` and `.../approval-history` (both share that literal prefix).
+   Fixed to require a path-segment boundary (exact match, or the next character is `/`) and to prefer
+   the longest matching registered route.
+
+This is the concrete justification for treating "builds but never ran" as a real, distinct risk
+category from "builds and runs green" throughout this document — not just a formality.
+
 ## 12. Non-critical limitations
 
 See the "Known non-critical limitations" section of the final delivery summary message for the full,

@@ -37,12 +37,16 @@ public sealed partial class PricingProfilesViewModel : ViewModelBase
     public override Task OnNavigatedToAsync() => LoadAsync();
 
     [RelayCommand]
-    private async Task LoadAsync() => await RunBusyAsync(async () =>
+    private async Task LoadAsync() => await RunBusyAsync(LoadCoreAsync);
+
+    // Unwrapped core so SaveAsync's create path (already inside a RunBusyAsync scope) can reload the
+    // grid without tripping RunBusyAsync's "already busy" reentrancy guard.
+    private async Task LoadCoreAsync()
     {
         var list = await _api.ListAsync(IncludeInactive);
         Profiles.Clear();
         foreach (var p in list) Profiles.Add(p);
-    });
+    }
 
     partial void OnSelectedProfileChanged(PricingProfileDto? value)
     {
@@ -92,7 +96,7 @@ public sealed partial class PricingProfilesViewModel : ViewModelBase
         if (IsNew)
         {
             var created = await _api.CreateAsync(request);
-            await LoadAsync();
+            await LoadCoreAsync();
             SelectedProfile = Profiles.FirstOrDefault(p => p.Id == created.Id);
         }
         else if (SelectedProfile is not null)

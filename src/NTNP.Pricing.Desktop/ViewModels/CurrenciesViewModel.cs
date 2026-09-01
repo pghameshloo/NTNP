@@ -33,12 +33,16 @@ public sealed partial class CurrenciesViewModel : ViewModelBase
     public override Task OnNavigatedToAsync() => LoadAsync();
 
     [RelayCommand]
-    private async Task LoadAsync() => await RunBusyAsync(async () =>
+    private async Task LoadAsync() => await RunBusyAsync(LoadCoreAsync);
+
+    // Unwrapped core so AddRateAsync (already inside a RunBusyAsync scope) can refresh the master grid
+    // without tripping RunBusyAsync's "already busy" reentrancy guard.
+    private async Task LoadCoreAsync()
     {
         var list = await _api.ListAsync(IncludeInactive);
         Currencies.Clear();
         foreach (var c in list) Currencies.Add(c);
-    });
+    }
 
     partial void OnSelectedCurrencyChanged(CurrencyDto? value)
     {
@@ -82,7 +86,7 @@ public sealed partial class CurrenciesViewModel : ViewModelBase
         RateHistory.Insert(0, rate);
         NewRatePurchase = NewRateSelling = null;
         NewRateSource = NewRateNotes = null;
-        await LoadAsync(); // refresh each currency's LatestRate in the master grid
+        await LoadCoreAsync(); // refresh each currency's LatestRate in the master grid
         SelectedCurrency = Currencies.FirstOrDefault(c => c.Id == rate.CurrencyId);
     });
 }

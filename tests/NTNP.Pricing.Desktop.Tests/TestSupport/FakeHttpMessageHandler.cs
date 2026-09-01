@@ -30,11 +30,21 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         Requests.Add(request);
         var path = request.RequestUri!.AbsolutePath.TrimStart('/');
-        var match = _routes.FirstOrDefault(r =>
+
+        // Match on a proper path-segment boundary (exact match, or the prefix is followed by '/') and
+        // prefer the LONGEST matching prefix — not just the first-registered one. Without this, a
+        // route like "api/project-revisions/{id}" registered before "api/project-revisions/{id}/mto"
+        // would swallow every request to the more specific sub-route too (both share that prefix),
+        // silently serving the wrong canned response instead of a 404 or the intended match.
+        var candidates = _routes.Where(r =>
         {
             var parts = r.Key.Split(' ', 2);
-            return string.Equals(parts[0], request.Method.Method, StringComparison.OrdinalIgnoreCase) && path.StartsWith(parts[1].TrimStart('/'), StringComparison.Ordinal);
+            if (!string.Equals(parts[0], request.Method.Method, StringComparison.OrdinalIgnoreCase)) return false;
+            var prefix = parts[1].TrimStart('/');
+            return path.Equals(prefix, StringComparison.Ordinal) ||
+                   (path.StartsWith(prefix, StringComparison.Ordinal) && path.Length > prefix.Length && path[prefix.Length] == '/');
         });
+        var match = candidates.OrderByDescending(r => r.Key.Length).FirstOrDefault();
 
         if (match.Respond is null)
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent($"No fake route registered for {request.Method} {path}") });

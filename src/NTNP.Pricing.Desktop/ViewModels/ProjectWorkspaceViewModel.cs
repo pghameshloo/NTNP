@@ -80,7 +80,11 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase
     public override Task OnNavigatedToAsync() => LoadAsync();
 
     [RelayCommand]
-    private async Task LoadAsync() => await RunBusyAsync(async () =>
+    private async Task LoadAsync() => await RunBusyAsync(LoadCoreAsync);
+
+    // Unwrapped core so CreateNewRevisionAsync (already inside a RunBusyAsync scope) can reload the
+    // project/revision-history without tripping RunBusyAsync's "already busy" reentrancy guard.
+    private async Task LoadCoreAsync()
     {
         Project = await _projectsApi.GetAsync(ProjectId);
         if (Project.CurrentRevisionId is not null)
@@ -89,7 +93,7 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase
         var history = await _revisionsApi.ListForProjectAsync(ProjectId);
         RevisionHistory.Clear();
         foreach (var r in history) RevisionHistory.Add(r);
-    });
+    }
 
     private async Task LoadRevisionAsync(Guid revisionId)
     {
@@ -187,7 +191,7 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase
     private async Task CreateNewRevisionAsync() => await RunBusyAsync(async () =>
     {
         var revision = await _revisionsApi.CreateNewRevisionUsingLatestPricesAsync(ProjectId);
-        await LoadAsync();
+        await LoadCoreAsync();
         await LoadRevisionAsync(revision.Id);
     });
 

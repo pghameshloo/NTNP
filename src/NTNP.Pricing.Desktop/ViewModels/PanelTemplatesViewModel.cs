@@ -74,12 +74,16 @@ public sealed partial class PanelTemplatesViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task SearchAsync() => await RunBusyAsync(async () =>
+    private async Task SearchAsync() => await RunBusyAsync(SearchCoreAsync);
+
+    // Unwrapped core so callers already inside a RunBusyAsync scope (SaveAsync, CreateNewRevisionAsync)
+    // can reload the grid without tripping RunBusyAsync's "already busy" reentrancy guard.
+    private async Task SearchCoreAsync()
     {
         var page = await _api.SearchAsync(SearchText, 1, 200, null, null);
         Templates.Clear();
         foreach (var t in page.Items) Templates.Add(t);
-    });
+    }
 
     partial void OnSelectedTemplateChanged(PanelTemplateDto? value)
     {
@@ -145,7 +149,7 @@ public sealed partial class PanelTemplatesViewModel : ViewModelBase
             var created = await _api.CreateAsync(new CreatePanelTemplateRequest(
                 FormTemplateCode, FormTemplateName, FormProductFamily.Id, FormVoltageLevel, FormPanelType.Id,
                 FormTechnicalDescription, FormBodyEsTemplate?.Id, FormNotes, items));
-            await SearchAsync();
+            await SearchCoreAsync();
             SelectedTemplate = Templates.FirstOrDefault(t => t.Id == created.Id);
         }
         else if (SelectedTemplate is not null)
@@ -175,7 +179,7 @@ public sealed partial class PanelTemplatesViewModel : ViewModelBase
     {
         if (SelectedTemplate is null) return;
         var revised = await _api.CreateNewRevisionAsync(SelectedTemplate.Id);
-        await SearchAsync();
+        await SearchCoreAsync();
         SelectedTemplate = Templates.FirstOrDefault(t => t.Id == revised.Id);
     });
 }

@@ -58,12 +58,16 @@ public sealed partial class EquipmentViewModel : ViewModelBase
     public override Task OnNavigatedToAsync() => SearchAsync();
 
     [RelayCommand]
-    private async Task SearchAsync() => await RunBusyAsync(async () =>
+    private async Task SearchAsync() => await RunBusyAsync(SearchCoreAsync);
+
+    // Unwrapped core so callers already inside a RunBusyAsync scope (SaveAsync, ImportFromExcelAsync)
+    // can reload the grid without tripping RunBusyAsync's "already busy" reentrancy guard.
+    private async Task SearchCoreAsync()
     {
         var page = await _api.SearchAsync(SearchText, 1, 300, IncludeInactive, category: null, MissingPriceOnly);
         Equipment.Clear();
         foreach (var e in page.Items) Equipment.Add(e);
-    });
+    }
 
     partial void OnSelectedEquipmentChanged(EquipmentDto? value)
     {
@@ -88,12 +92,16 @@ public sealed partial class EquipmentViewModel : ViewModelBase
         _ = LoadPriceHistoryAsync(value.Id);
     }
 
-    private async Task LoadPriceHistoryAsync(Guid equipmentId) => await RunBusyAsync(async () =>
+    private async Task LoadPriceHistoryAsync(Guid equipmentId) => await RunBusyAsync(() => LoadPriceHistoryCoreAsync(equipmentId));
+
+    // Unwrapped core so AddPriceAsync (already inside a RunBusyAsync scope) can refresh price history
+    // without tripping RunBusyAsync's reentrancy guard.
+    private async Task LoadPriceHistoryCoreAsync(Guid equipmentId)
     {
         var prices = await _api.GetPriceHistoryAsync(equipmentId);
         PriceHistory.Clear();
         foreach (var p in prices) PriceHistory.Add(p);
-    });
+    }
 
     [RelayCommand]
     private void New()
@@ -119,7 +127,7 @@ public sealed partial class EquipmentViewModel : ViewModelBase
             var created = await _api.CreateAsync(new CreateEquipmentRequest(
                 FormCode, FormTechnicalPartNumber, FormDescriptionFa, FormDescriptionEn, FormCategory, FormSubcategory,
                 FormBrand, FormModel, FormManufacturer, FormSupplier, FormUnit, FormLeadTimeDays, FormNotes));
-            await SearchAsync();
+            await SearchCoreAsync();
             SelectedEquipment = Equipment.FirstOrDefault(e => e.Id == created.Id);
         }
         else if (SelectedEquipment is not null)
@@ -140,7 +148,7 @@ public sealed partial class EquipmentViewModel : ViewModelBase
         if (SelectedEquipment is null) return;
         await _api.AddPriceAsync(new CreateEquipmentPriceRequest(
             SelectedEquipment.Id, NewPriceCurrencyCode, NewPriceForeignUnitPrice, NewPriceRialUnitPrice, NewPriceEffectiveAt, NewPriceSourceText, null));
-        await LoadPriceHistoryAsync(SelectedEquipment.Id);
+        await LoadPriceHistoryCoreAsync(SelectedEquipment.Id);
 
         // The equipment row's CurrentPrice/HasMissingPrice flags may have changed — refresh it from the grid data too.
         var refreshed = await _api.GetAsync(SelectedEquipment.Id);
@@ -181,6 +189,6 @@ public sealed partial class EquipmentViewModel : ViewModelBase
 
         var result = await _api.CommitImportAsync(new EquipmentImportCommitRequest(preview.ImportToken));
         _dialogs.ShowInfo("درون‌ریزی کامل شد", $"{result.InsertedCount} ردیف جدید و {result.UpdatedCount} ردیف بروزرسانی شد.");
-        await SearchAsync();
+        await SearchCoreAsync();
     });
 }
