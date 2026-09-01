@@ -2,7 +2,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NTNP.Pricing.Application.Auth;
 using NTNP.Pricing.Application.Common;
+using NTNP.Pricing.Application.Equipment;
+using NTNP.Pricing.Application.Users;
+using NTNP.Pricing.Infrastructure.Auth;
+using NTNP.Pricing.Infrastructure.Excel;
 using NTNP.Pricing.Infrastructure.FileStorage;
 using NTNP.Pricing.Infrastructure.Identity;
 using NTNP.Pricing.Infrastructure.Persistence;
@@ -46,6 +51,13 @@ public static class DependencyInjection
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
+
+        services.AddMemoryCache();
+        services.AddScoped<IEquipmentImportService, EquipmentImportService>();
 
         return services;
     }
