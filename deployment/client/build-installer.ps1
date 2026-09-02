@@ -60,20 +60,19 @@ Write-Host "=== Step 2/3: building the MSI ===" -ForegroundColor Cyan
 $wxsPath = Join-Path $repoRoot 'installer\NTNP.Pricing.Installer\Package.wxs'
 # Read/write via .NET directly (explicit UTF-8, no BOM) rather than Get-Content/Set-Content — their
 # default encoding varies by PowerShell version/host and can silently corrupt the leading
-# <?xml ... ?> declaration (observed as a WIX0104 "invalid XML declaration" parse failure). \bVersion=
-# (a word-boundary anchor) matches only the Package element's own Version="..." attribute, not the
-# "Version" inside InstallerVersion="500" a plain 'Version=' substring match would also hit.
+# <?xml ... ?> declaration.
+#
+# -creplace (CASE-SENSITIVE replace) is required here, not -replace: PowerShell's -replace is
+# case-INSENSITIVE by default, so 'Version="[\d.]+"' also matched the XML declaration's own lowercase
+# version="1.0" pseudo-attribute on line 1 and rewrote it to capitalized Version="1.0.0" — which is
+# not a valid XML declaration attribute name, producing WIX0104 "invalid XML declaration". Confirmed
+# by direct evidence: a byte/line dump of the file immediately before the WiX build step showed
+# exactly this corruption. \b (word-boundary) alone was not enough — "version" in the declaration is
+# preceded by a space too, so it still matched; only case-sensitivity distinguishes the Package
+# element's "Version=" from the declaration's "version=" and from "InstallerVersion=500"'s "Version=".
 $wxsContent = [System.IO.File]::ReadAllText($wxsPath, [System.Text.Encoding]::UTF8)
-$wxsContent = $wxsContent -replace '\bVersion="[\d.]+"', "Version=`"$Version`""
+$wxsContent = $wxsContent -creplace '\bVersion="[\d.]+"', "Version=`"$Version`""
 [System.IO.File]::WriteAllText($wxsPath, $wxsContent, [System.Text.UTF8Encoding]::new($false))
-
-# Diagnostic: a WIX0104 "invalid XML declaration" on this file's line 1 has survived one prior fix
-# attempt (switching Get-Content/Set-Content to File.ReadAllText/WriteAllText) for reasons not yet
-# confirmed. Dump the exact bytes actually on disk right before WiX reads them so the next failure
-# (if any) carries direct evidence instead of another guess. Safe to remove once this is resolved.
-$firstBytes = [System.IO.File]::ReadAllBytes($wxsPath) | Select-Object -First 64
-Write-Host "Package.wxs first 64 bytes (hex): $(($firstBytes | ForEach-Object { $_.ToString('X2') }) -join ' ')"
-Write-Host "Package.wxs first line (raw): $((Get-Content $wxsPath -TotalCount 1))"
 
 dotnet build $installerProject -c Release
 if ($LASTEXITCODE -ne 0) { throw "dotnet build (WiX) failed with exit code $LASTEXITCODE." }

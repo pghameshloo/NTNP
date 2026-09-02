@@ -74,12 +74,21 @@ install needed) — see `docs/deployment.md`.
 was later run for real on a `windows-latest` GitHub Actions runner (see that workflow) and found two
 genuine authoring bugs the manual review above missed, both since fixed:
 
-1. `deployment/client/build-installer.ps1`'s in-place version-bump (`Get-Content -Raw | -replace ... |
-   Set-Content`) corrupted `Package.wxs`'s leading `<?xml ... ?>` declaration — a real PowerShell
-   encoding pitfall (`Get-Content`/`Set-Content`'s default encoding is host/version-dependent). Fixed
-   by reading/writing via `[System.IO.File]::ReadAllText/WriteAllText` with an explicit UTF-8-no-BOM
-   encoding instead. The same regex (`Version="[\d.]+"`) also incorrectly matched inside
-   `InstallerVersion="500"` (a substring hit) — fixed with a `\b` word-boundary anchor.
+1. `deployment/client/build-installer.ps1`'s in-place version-bump used PowerShell's `-replace` with
+   pattern `Version="[\d.]+"` to set `Package.wxs`'s `<Package Version="...">` attribute.
+   **`-replace` is case-INSENSITIVE by default in PowerShell** (unlike .NET's `Regex` class) — so the
+   same pattern also matched the XML declaration's own lowercase `version="1.0"` pseudo-attribute on
+   line 1 and rewrote it to capitalized `Version="1.0.0"`, which is not a valid XML declaration
+   attribute name, producing `WIX0104: Syntax for an XML declaration is invalid`. A first fix attempt
+   (switching `Get-Content`/`Set-Content` to `[System.IO.File]::ReadAllText/WriteAllText` for explicit
+   UTF-8-no-BOM encoding, plus a `\b` word-boundary anchor to stop a separate real bug — the same
+   unbounded pattern also matched inside `InstallerVersion="500"`) did not fix this, since neither
+   encoding nor `\b` addresses case-insensitivity — the declaration's `version` is preceded by a space
+   too, so `\b` still matched it. Root-caused only after adding a diagnostic byte/line dump of the file
+   immediately before the WiX build step and reading the actual corrupted output back
+   (`<?xml Version="1.0.0" encoding="utf-8"?>`) — direct evidence beat several rounds of plausible-but-
+   wrong theorizing. Fixed with `-creplace` (case-sensitive replace), confirmed via a standalone regex
+   test to match exactly one string in the file (`Package`'s own `Version="1.0.0"`).
 2. `ServerAddressDialog.wxs` authored `Dialog`/`Publish`/`UI` under the `ui:` extension namespace
    prefix. Decompiling the actual `WixToolset.Core.dll`/`WixToolset.UI.wixext.dll` (via `ilspycmd`,
    pulled from the NuGet cache already restored in this sandbox) showed these are **core, unprefixed**
@@ -88,12 +97,19 @@ genuine authoring bugs the manual review above missed, both since fixed:
    UI extension's `ParseElement` only handles `WixUI` under `Fragment`/`Package`/`UI`. Fixed by
    removing the incorrect `ui:` prefix from `UI`/`Dialog`/`Publish` (and the now-unused `xmlns:ui`
    declaration).
+3. WiX v4/v5 dropped the WiX v3 idiom of a `<Publish ...>1</Publish>` inner-text condition and a
+   `<Text>...</Text>` inner-text control label — both raise `WIX0400` now (`Core.InnerTextDisallowed`,
+   confirmed in the decompiled compiler) and require a `Condition="1"` attribute and a
+   `<Text Value="..." />` attribute respectively. Fixed all five `Publish` elements and the one `Text`
+   element in `ServerAddressDialog.wxs`.
 
 This is a second concrete data point (alongside §11's Desktop.Tests findings) for the same underlying
 lesson: manual review of Windows-only artifacts in this sandbox is a real, honest best effort, but a
 genuine compiler run on real Windows is the only thing that actually proves correctness — which is
 exactly why `.github/workflows/release.yml` exists, rather than shipping the manually-reviewed sources
-as a final answer.
+as a final answer. It also shows the same lesson one level deeper: even once real Windows CI is in the
+loop, a plausible theory (encoding) can still be wrong — the byte-level diagnostic dump, not another
+guess, is what actually closed this out.
 
 ## 3. Panel Types / Product Families
 
