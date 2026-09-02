@@ -102,6 +102,13 @@ genuine authoring bugs the manual review above missed, both since fixed:
    confirmed in the decompiled compiler) and require a `Condition="1"` attribute and a
    `<Text Value="..." />` attribute respectively. Fixed all five `Publish` elements and the one `Text`
    element in `ServerAddressDialog.wxs`.
+4. `NTNP.Pricing.Installer.wixproj` explicitly declared `<Compile Include="Package.wxs" />`/
+   `<Compile Include="ServerAddressDialog.wxs" />` — redundant, since the WiX SDK enables
+   `EnableDefaultCompileItems` by default (mirroring the .NET SDK) and globs `**/*.wxs` on its own
+   (confirmed in `wix.targets`). The explicit items double-included both files, which a real Windows
+   build caught as `WIX0089: Multiple entry sections '*' and '*' found` (`Package.wxs`'s `<Package>`
+   entry section compiled twice) plus ~437 "already harvested" duplicate-file warnings from the
+   `<Files Include>` glob running twice too. Fixed by removing the explicit `<Compile>` item group.
 
 This is a second concrete data point (alongside §11's Desktop.Tests findings) for the same underlying
 lesson: manual review of Windows-only artifacts in this sandbox is a real, honest best effort, but a

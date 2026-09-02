@@ -34,10 +34,15 @@
     <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="Package.wxs" />
-    <Compile Include="ServerAddressDialog.wxs" />
-  </ItemGroup>
+  <!--
+    No explicit <Compile Include> here: the WiX SDK enables EnableDefaultCompileItems by default
+    (mirroring the .NET SDK), which globs **/*.wxs on its own (confirmed in
+    WixToolset.Sdk's wix.targets). An explicit <Compile Include="Package.wxs" />/
+    <Compile Include="ServerAddressDialog.wxs" /> here double-included both files, which a real
+    Windows WiX build caught as WIX0089 "Multiple entry sections '*' and '*' found" (Package.wxs's
+    <Package> entry section compiled twice) plus ~437 "already harvested" duplicate-file warnings
+    from the <Files Include> glob also running twice.
+  -->
 
   <ItemGroup>
     <Content Include="License.rtf" />
