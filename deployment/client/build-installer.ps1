@@ -74,7 +74,13 @@ $wxsContent = [System.IO.File]::ReadAllText($wxsPath, [System.Text.Encoding]::UT
 $wxsContent = $wxsContent -creplace '\bVersion="[\d.]+"', "Version=`"$Version`""
 [System.IO.File]::WriteAllText($wxsPath, $wxsContent, [System.Text.UTF8Encoding]::new($false))
 
-dotnet build $installerProject -c Release
+# -p:Platform=x64 is required, not optional: WixToolset.Sdk's wix.targets defaults InstallerPlatform
+# to x86 whenever $(Platform) is empty/AnyCPU/Win32 (confirmed in wix.targets), which marks every
+# harvested file's auto-generated Component as 32-bit — failing ICE80 ("32BitComponent uses
+# 64BitDirectory") against the 64-bit ProgramFiles64Folder/INSTALLFOLDER tree in Package.wxs, on a
+# real Windows build. <Platforms>x64</Platforms> in the .wixproj only lists the platform as
+# available, the same way it works in a multi-targeting .csproj — it does not select it.
+dotnet build $installerProject -c Release -p:Platform=x64
 if ($LASTEXITCODE -ne 0) { throw "dotnet build (WiX) failed with exit code $LASTEXITCODE." }
 
 $msiPath = Join-Path $outputDir 'NTNP-Pricing-Setup-x64.msi'

@@ -109,6 +109,14 @@ genuine authoring bugs the manual review above missed, both since fixed:
    build caught as `WIX0089: Multiple entry sections '*' and '*' found` (`Package.wxs`'s `<Package>`
    entry section compiled twice) plus ~437 "already harvested" duplicate-file warnings from the
    `<Files Include>` glob running twice too. Fixed by removing the explicit `<Compile>` item group.
+5. `deployment/client/build-installer.ps1` called `dotnet build $installerProject -c Release` with no
+   `-p:Platform=x64` — `<Platforms>x64</Platforms>` in the `.wixproj` only lists x64 as an available
+   platform (the same way it works in a multi-targeting `.csproj`); it does not select it. Confirmed
+   in `wix.targets`: `InstallerPlatform` defaults to `x86` whenever `$(Platform)` is empty/`AnyCPU`/
+   `Win32`. With no explicit platform, every harvested file's auto-generated `Component` was created
+   32-bit, which a real Windows build caught as 444 `WIX0204: ICE80` errors ("32BitComponent uses
+   64BitDirectory") against `Package.wxs`'s 64-bit `ProgramFiles64Folder`/`INSTALLFOLDER` tree. Fixed
+   by adding `-p:Platform=x64` to the `dotnet build` invocation.
 
 This is a second concrete data point (alongside §11's Desktop.Tests findings) for the same underlying
 lesson: manual review of Windows-only artifacts in this sandbox is a real, honest best effort, but a
