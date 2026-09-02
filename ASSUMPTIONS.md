@@ -117,6 +117,14 @@ genuine authoring bugs the manual review above missed, both since fixed:
    32-bit, which a real Windows build caught as 444 `WIX0204: ICE80` errors ("32BitComponent uses
    64BitDirectory") against `Package.wxs`'s 64-bit `ProgramFiles64Folder`/`INSTALLFOLDER` tree. Fixed
    by adding `-p:Platform=x64` to the `dotnet build` invocation.
+6. `StartMenuShortcut`/`DesktopShortcut` used an `HKLM` `RegistryValue` as their `KeyPath`. Standard
+   MSI authoring rule (independent of the package's own `Scope="perMachine"`): a component that
+   installs into a per-user-shaped standard directory (`ProgramMenuFolder`/`DesktopFolder`) must have
+   an `HKCU` `KeyPath`, not `HKLM` — a real Windows build caught this as three separate ICEs
+   (`WIX0204: ICE38/ICE43/ICE57`) all naming the same mismatch. Fixed by changing both components'
+   `KeyPath` `RegistryValue` to `Root="HKCU"` (the third component, `ServerUrlRegistry`, correctly
+   keeps `HKLM` — it installs into `INSTALLFOLDER`, a genuine per-machine location, and was not
+   flagged).
 
 This is a second concrete data point (alongside §11's Desktop.Tests findings) for the same underlying
 lesson: manual review of Windows-only artifacts in this sandbox is a real, honest best effort, but a

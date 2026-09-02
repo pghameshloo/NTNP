@@ -60,7 +60,11 @@
                 WorkingDirectory="INSTALLFOLDER"
                 Icon="AppIcon.exe" />
       <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
-      <RegistryValue Root="HKLM" Key="Software\NTNP\Pricing" Name="StartMenuShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+      <!-- HKCU, not HKLM: a component installing into a per-user-shaped standard directory
+           (ProgramMenuFolder/DesktopFolder) must have an HKCU KeyPath — confirmed on a real Windows
+           build (WIX0204 ICE38/ICE43/ICE57, all three naming this exact HKLM-KeyPath mismatch). This
+           is a standard MSI authoring rule independent of the package's own Scope="perMachine". -->
+      <RegistryValue Root="HKCU" Key="Software\NTNP\Pricing" Name="StartMenuShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
     <!-- Desktop shortcut (Section 34 — optional, toggled on the Server Address setup page). -->
@@ -71,7 +75,7 @@
                 Target="[INSTALLFOLDER]NTNP.Pricing.Desktop.exe"
                 WorkingDirectory="INSTALLFOLDER"
                 Icon="AppIcon.exe" />
-      <RegistryValue Root="HKLM" Key="Software\NTNP\Pricing" Name="DesktopShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+      <RegistryValue Root="HKCU" Key="Software\NTNP\Pricing" Name="DesktopShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
     <!-- Section 34 "Configurable internal server address": written by ServerAddressDlg (see
